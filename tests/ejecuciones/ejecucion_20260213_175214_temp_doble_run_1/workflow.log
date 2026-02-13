@@ -1,0 +1,29 @@
+[2026-02-13 17:52:14] [WARN] [NORMALIZADOR] Fecha convertida en registro SOL-T01: '2025-03-15' -> '15/03/2025'
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 1 registros normalizados
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 1 registros normalizados
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 3 registros normalizados
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 1 registros normalizados
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 1 registros normalizados
+[2026-02-13 17:52:14] [WARN] [NORMALIZADOR] Fecha convertida en registro SOL-T08: '20-06-2025' -> '20/06/2025'
+[2026-02-13 17:52:14] [INFO] [NORMALIZADOR] Normalizacion completada - 1 registros normalizados
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 1 validos, 0 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V02 invalido: R1: campo id_cliente vacio
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V03 invalido: R2: moneda no soportada: GBP
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V04 invalido: R3: monto fuera de rango: -500 (debe ser > 0)
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V05 invalido: R1: campo tipo_producto vacio; R2: formato de fecha invalido: '32/13/2025'; R2: moneda no soportada: GBP; R3: monto fuera de rango: -500 (debe ser > 0)
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 1 validos, 0 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V07 invalido: R3: monto fuera de rango: 1000000000 (debe ser <= 999999999)
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V08 invalido: R3: monto fuera de rango: 0 (debe ser > 0)
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V09 invalido: R3: monto no es numerico: abc
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V10 invalido: R1: campo monto_o_limite vacio; R3: monto no es numerico:    
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [WARN] [VALIDADOR] Registro SOL-V11 invalido: R3: monto no es numerico: -
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 0 validos, 1 invalidos
+[2026-02-13 17:52:14] [INFO] [VALIDADOR] Validacion completada - 1 validos, 0 invalidos
