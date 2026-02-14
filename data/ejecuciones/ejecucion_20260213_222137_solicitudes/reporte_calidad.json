@@ -1,0 +1,39 @@
+{
+    "timestamp": "2026-02-13 22:21:37",
+    "archivo_entrada": "solicitudes.txt",
+    "resumen": {
+        "total_procesados": 15,
+        "total_validos": 9,
+        "total_invalidos": 6,
+        "porcentaje_cumplimiento": 60.0
+    },
+    "detalle_reglas": {
+        "R1_campos_obligatorios": {
+            "total_fallas": 2,
+            "porcentaje_falla_sobre_invalidos": 33.3,
+            "porcentaje_falla_sobre_total": 13.3,
+            "ejemplos": [
+                "SOL-007: campo id_cliente vacio",
+                "SOL-015: campo tipo_producto vacio"
+            ]
+        },
+        "R2_formato_fecha_moneda": {
+            "total_fallas": 2,
+            "porcentaje_falla_sobre_invalidos": 33.3,
+            "porcentaje_falla_sobre_total": 13.3,
+            "ejemplos": [
+                "SOL-010: moneda no soportada: GBP",
+                "SOL-012: formato de fecha invalido: '32/13/2025'"
+            ]
+        },
+        "R3_rango_monto": {
+            "total_fallas": 2,
+            "porcentaje_falla_sobre_invalidos": 33.3,
+            "porcentaje_falla_sobre_total": 13.3,
+            "ejemplos": [
+                "SOL-005: monto fuera de rango: -500 (debe ser > 0)",
+                "SOL-011: monto fuera de rango: 0 (debe ser > 0)"
+            ]
+        }
+    }
+}

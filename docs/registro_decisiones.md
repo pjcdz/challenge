@@ -226,6 +226,30 @@ detectando el formato automaticamente por la extension del archivo.
 
 ---
 
+## DEC-11: Seleccion de archivo por argumento CLI o menu interactivo
+
+**Fecha**: Febrero 2026
+**Estado**: Aprobada
+**Contexto**: La implementacion original hardcodeaba `solicitudes.csv` como archivo de entrada.
+Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que archivo procesar.
+
+**Decision**: Implementar doble mecanismo de seleccion:
+1. **Argumento CLI**: `python src/main.py data/solicitudes.json` — el archivo se pasa como `sys.argv[1]`
+2. **Menu interactivo**: si no se pasa argumento, se listan los archivos `.csv`, `.json`, `.txt`
+   disponibles en `data/` y el operador elige por numero
+
+**Justificacion**:
+- El argumento CLI permite automatizacion (scripts, cron, pipelines)
+- El menu interactivo es amigable para uso manual y evita errores de tipeo en rutas
+- Si no hay archivos disponibles o la opcion es invalida, se retorna error controlado
+- Los tests existentes no se ven afectados porque usan `archivo_entrada_param` (parametro directo)
+
+**Alternativas descartadas**:
+- Solo argumento CLI sin menu: poco amigable para operadores que no conocen las rutas
+- Argparse: agrega complejidad innecesaria para un solo parametro opcional
+
+---
+
 ## Resumen de Decisiones
 
 | ID | Titulo | Prioridad | Modulos afectados |
@@ -240,3 +264,4 @@ detectando el formato automaticamente por la extension del archivo.
 | DEC-08 | Logger propio | Media | logger.py |
 | DEC-09 | Artefactos por ejecucion | Alta | main.py, logger.py, docs/, tests/ |
 | DEC-10 | Soporte multi-formato CSV/JSON/TXT | Alta | ingesta.py, docs/, tests/ |
+| DEC-11 | Seleccion archivo CLI o menu interactivo | Media | main.py, docs/ |

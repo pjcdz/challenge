@@ -51,8 +51,17 @@ challenge/
 
 ```bash
 cd challenge
+
+# Opcion A: pasando el archivo como argumento
+python src/main.py data/solicitudes.csv
+python src/main.py data/solicitudes.json
+python src/main.py data/solicitudes.txt
+
+# Opcion B: menu interactivo (sin argumento, lista archivos disponibles)
 python src/main.py
 ```
+
+Si no se pasa argumento, el programa muestra un menu con los archivos `.csv`, `.json` y `.txt` disponibles en `data/` para que el usuario elija cual procesar.
 
 Cada ejecucion crea una carpeta unica dentro de `data/ejecuciones/` y guarda ahi:
 - `solicitudes_limpias.csv`

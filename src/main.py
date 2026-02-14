@@ -136,6 +136,66 @@ def exportar_csv(registros, ruta_salida):
     logger.info(MODULO, "Datos exportados a: " + ruta_salida)
 
 
+def listar_archivos_entrada(dir_data):
+    # Lista archivos con extension soportada (.csv, .json, .txt) en dir_data
+    extensiones = [".csv", ".json", ".txt"]
+    archivos = []
+    if not os.path.exists(dir_data):
+        return archivos
+    nombres = os.listdir(dir_data)
+    i = 0
+    while i < len(nombres):
+        nombre = nombres[i]
+        ext = os.path.splitext(nombre)[1].lower()
+        if ext in extensiones:
+            archivos.append(nombre)
+        i += 1
+    archivos.sort()
+    return archivos
+
+
+def menu_interactivo(dir_data):
+    # Muestra menu para seleccionar archivo de entrada
+    archivos = listar_archivos_entrada(dir_data)
+    if len(archivos) == 0:
+        print(
+            "No se encontraron archivos de entrada (.csv, .json, .txt) en " + dir_data
+        )
+        return None
+    print("")
+    print("=== Seleccion de archivo de entrada ===")
+    print("")
+    i = 0
+    while i < len(archivos):
+        print("  " + str(i + 1) + ". " + archivos[i])
+        i += 1
+    print("")
+    opcion = input("Seleccione una opcion (1-" + str(len(archivos)) + "): ")
+    opcion = opcion.strip()
+    # Validar que sea un numero valido
+    es_valido = False
+    num = 0
+    if len(opcion) > 0:
+        es_numero = True
+        j = 0
+        while j < len(opcion):
+            if opcion[j] < "0" or opcion[j] > "9":
+                es_numero = False
+            j += 1
+        if es_numero:
+            num = int(opcion)
+            if num >= 1 and num <= len(archivos):
+                es_valido = True
+    if not es_valido:
+        print("Opcion no valida.")
+        return None
+    seleccion = archivos[num - 1]
+    ruta = os.path.join(dir_data, seleccion)
+    print("Archivo seleccionado: " + ruta)
+    print("")
+    return ruta
+
+
 def main(archivo_entrada_param=None, archivo_salida_param=None, dir_data_param=None):
     # Orquestador principal del workflow
     # Acepta rutas opcionales para testing; si no se pasan, usa las por defecto
@@ -150,7 +210,26 @@ def main(archivo_entrada_param=None, archivo_salida_param=None, dir_data_param=N
     if archivo_entrada_param != None:
         archivo_entrada = archivo_entrada_param
     else:
-        archivo_entrada = os.path.join(dir_data, "solicitudes.csv")
+        archivo_entrada = None
+
+    # Si no se recibio archivo_entrada, intentar con sys.argv o menu interactivo
+    if archivo_entrada == None:
+        if len(sys.argv) > 1:
+            # Se paso por linea de comandos: python src/main.py ruta/al/archivo
+            archivo_entrada = sys.argv[1]
+        else:
+            # Menu interactivo
+            archivo_entrada = menu_interactivo(dir_data)
+            if archivo_entrada == None:
+                print("No se selecciono archivo. Saliendo.")
+                return {
+                    "status": "error",
+                    "archivo_entrada": None,
+                    "carpeta_ejecucion": None,
+                    "archivo_salida": None,
+                    "archivo_reporte": None,
+                    "archivo_log": None,
+                }
 
     # Crear carpeta unica de ejecucion y centralizar todos los artefactos ahi
     carpeta_ejecucion = crear_carpeta_ejecucion(dir_data, archivo_entrada)
@@ -264,4 +343,11 @@ def main(archivo_entrada_param=None, archivo_salida_param=None, dir_data_param=N
 
 # Ejecutar el workflow
 if __name__ == "__main__":
-    main()
+    resultado = main()
+    if resultado["status"] == "ok":
+        print("Workflow completado exitosamente.")
+        print("Carpeta de ejecucion: " + resultado["carpeta_ejecucion"])
+    elif resultado["status"] == "empty":
+        print("Archivo vacio o sin registros.")
+    else:
+        print("Error en el workflow.")

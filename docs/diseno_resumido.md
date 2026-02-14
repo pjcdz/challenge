@@ -1,7 +1,7 @@
 # Diseno Resumido - Etapa 1
 # Mini-Workflow Supervisado - Back-Office
 
-**Version**: 1.4  
+**Version**: 1.5  
 **Fecha**: Febrero 2026  
 **Formato**: version compacta para exportar a PDF (objetivo: 1-2 paginas)
 
@@ -48,7 +48,7 @@ solicitudes.csv / .json / .txt
 
 | Modulo | Responsabilidad | Requerimiento |
 |--------|-----------------|---------------|
-| `main.py` | Orquesta el flujo secuencial y exporta CSV | RF-05 |
+| `main.py` | Orquesta el flujo secuencial, selecciona archivo (CLI o menu) y exporta CSV | RF-05 |
 | `ingesta.py` | Lee CSV, JSON o TXT y retorna lista de diccionarios | RF-01 |
 | `normalizador.py` | Normaliza fechas, casing, trimming, campo calculado | RF-02 |
 | `validador.py` | Aplica R1, R2, R3 y marca estado VALIDO/INVALIDO | RF-03 |

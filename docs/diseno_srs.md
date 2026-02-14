@@ -1,7 +1,7 @@
 # Documento de Diseno - SRS
 # Mini-Workflow Supervisado: Alta de Productos Back-Office
 
-**Version**: 1.6
+**Version**: 1.7
 **Fecha**: Febrero 2026
 **Autor**: Candidato
 
@@ -243,13 +243,19 @@ PARA evaluar la calidad de las solicitudes recibidas
 (ingesta, normalizacion, validacion, calidad) y generar las salidas correspondientes.
 
 **Descripcion**: El orquestador:
-1. Registra inicio del workflow con timestamp
-2. Ejecuta ingesta del archivo de entrada
-3. Ejecuta normalizacion de cada registro
-4. Ejecuta validacion de cada registro normalizado
-5. Genera reporte de calidad
-6. Exporta datos normalizados a CSV de salida
-7. Registra resumen final (tiempo total, totales procesados)
+1. Determina el archivo de entrada (argumento CLI, menu interactivo, o parametro directo)
+2. Registra inicio del workflow con timestamp
+3. Ejecuta ingesta del archivo de entrada
+4. Ejecuta normalizacion de cada registro
+5. Ejecuta validacion de cada registro normalizado
+6. Genera reporte de calidad
+7. Exporta datos normalizados a CSV de salida
+8. Registra resumen final (tiempo total, totales procesados)
+
+**Modos de seleccion de archivo**:
+- `python src/main.py ruta/al/archivo` — por argumento de linea de comandos
+- `python src/main.py` — menu interactivo que lista archivos disponibles en `data/`
+- `main(archivo_entrada_param="ruta")` — parametro directo (uso en tests)
 
 **Componente**: `src/main.py`
 
