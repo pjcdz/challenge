@@ -526,13 +526,132 @@ def test_workflow_completo_json_e2e():
     assert ok
 
 
+def test_workflow_completo_txt_e2e():
+    # DADO un archivo TXT delimitado por pipe con registros validos e invalidos
+    # CUANDO se ejecuta el workflow completo
+    # ENTONCES genera carpeta de ejecucion con CSV, reporte y log correctos
+    print("TEST: test_workflow_completo_txt_e2e")
+
+    # Crear archivo TXT de prueba (pipe-delimited)
+    ruta_txt = os.path.join(CARPETA_TEST, "temp_e2e.txt")
+    arch = open(ruta_txt, "w", encoding="utf-8")
+    arch.write(
+        "id_solicitud|fecha_solicitud|tipo_producto|id_cliente|monto_o_limite|moneda|pais|flag_prioritario|flag_digital\n"
+    )
+    arch.write("SOL-T01|15/03/2025|CUENTA|CLI-100|50000|ARS|Argentina|S|N\n")
+    arch.write("SOL-T02|2025-06-20|tarjeta|CLI-200|75000|USD|Brasil|N|S\n")
+    arch.write("SOL-T03|10/01/2025||CLI-300|30000|ARS|Argentina|S|N\n")
+    arch.close()
+
+    resultado_main = main.main(
+        archivo_entrada_param=ruta_txt,
+        dir_data_param=CARPETA_TEST,
+    )
+
+    ok = True
+
+    if resultado_main == None:
+        print("  FALLO: main.main devolvio None")
+        ok = False
+    elif resultado_main["status"] != "ok":
+        print(
+            "  FALLO: status esperado 'ok', se obtuvo '"
+            + str(resultado_main["status"])
+            + "'"
+        )
+        ok = False
+
+    if ok:
+        carpeta_ejecucion = resultado_main["carpeta_ejecucion"]
+        ruta_salida = resultado_main["archivo_salida"]
+        ruta_reporte = resultado_main["archivo_reporte"]
+        ruta_log = resultado_main["archivo_log"]
+    else:
+        carpeta_ejecucion = ""
+        ruta_salida = ""
+        ruta_reporte = ""
+        ruta_log = ""
+
+    # Verificar CSV de salida (header + 3 registros = 4 lineas)
+    if ok and not os.path.exists(ruta_salida):
+        print("  FALLO: no se genero el archivo CSV de salida")
+        ok = False
+    elif ok:
+        arch = open(ruta_salida, "r", encoding="utf-8")
+        lineas = []
+        for linea in arch:
+            lineas.append(linea)
+        arch.close()
+        if len(lineas) < 4:
+            print("  FALLO: CSV de salida tiene menos de 4 lineas")
+            ok = False
+        else:
+            tiene_valido = False
+            tiene_invalido = False
+            i = 1
+            while i < len(lineas):
+                if "VALIDO" in lineas[i] and "INVALIDO" not in lineas[i]:
+                    tiene_valido = True
+                if "INVALIDO" in lineas[i]:
+                    tiene_invalido = True
+                i += 1
+            if not tiene_valido:
+                print("  FALLO: no hay registros VALIDO en el CSV de salida")
+                ok = False
+            if not tiene_invalido:
+                print("  FALLO: no hay registros INVALIDO (SOL-T03 deberia fallar R1)")
+                ok = False
+
+    # Verificar reporte JSON
+    if ok and not os.path.exists(ruta_reporte):
+        print("  FALLO: no se genero reporte_calidad.json")
+        ok = False
+    elif ok:
+        arch = open(ruta_reporte, "r", encoding="utf-8")
+        contenido = arch.read()
+        arch.close()
+        datos_rep = json.loads(contenido)
+        if "resumen" not in datos_rep.keys():
+            print("  FALLO: reporte no contiene 'resumen'")
+            ok = False
+        elif datos_rep["resumen"]["total_procesados"] != 3:
+            print(
+                "  FALLO: reporte dice "
+                + str(datos_rep["resumen"]["total_procesados"])
+                + " procesados, se esperaban 3"
+            )
+            ok = False
+
+    # Verificar log
+    if ok and not os.path.exists(ruta_log):
+        print("  FALLO: no se genero workflow.log")
+        ok = False
+    elif ok:
+        arch = open(ruta_log, "r", encoding="utf-8")
+        contenido_log = arch.read()
+        arch.close()
+        if "Workflow completado en " not in contenido_log:
+            print("  FALLO: workflow.log no contiene resumen final")
+            ok = False
+
+    # Limpiar temporales
+    if os.path.exists(ruta_txt):
+        os.remove(ruta_txt)
+    if carpeta_ejecucion != "" and os.path.exists(carpeta_ejecucion):
+        shutil.rmtree(carpeta_ejecucion)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
 # Ejecutar tests manualmente
 if __name__ == "__main__":
     print("=" * 50)
     print("TESTS DE MAIN / ORQUESTADOR (RF-05)")
     print("=" * 50)
 
-    total = 6
+    total = 7
     aprobados = 0
 
     try:
@@ -562,6 +681,11 @@ if __name__ == "__main__":
         pass
     try:
         test_workflow_completo_json_e2e()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_workflow_completo_txt_e2e()
         aprobados += 1
     except AssertionError:
         pass

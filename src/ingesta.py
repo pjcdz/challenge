@@ -101,7 +101,18 @@ def leer_json(archivo):
         if type(elem) != dict:
             logger.warn(MODULO, "Elemento no es un diccionario, se omite")
             continue
-        registros.append(elem)
+        # Convertir valores no-string a string para compatibilidad
+        # con normalizador (que hace .strip() sobre cada valor)
+        d = {}
+        for campo in elem.keys():
+            valor = elem[campo]
+            if valor == None:
+                d[campo] = None
+            elif type(valor) != str:
+                d[campo] = str(valor)
+            else:
+                d[campo] = valor
+        registros.append(d)
 
     if len(registros) == 0:
         logger.warn(MODULO, "Archivo vacio (solo header o sin datos): " + archivo)

@@ -281,6 +281,92 @@ def test_formato_no_soportado():
     assert ok
 
 
+def test_json_tipos_nativos():
+    # DADO un archivo JSON con valores como int, float y bool (no string)
+    # CUANDO se ejecuta la ingesta
+    # ENTONCES se convierten a string y no explota el normalizador
+    print("TEST: test_json_tipos_nativos")
+
+    ruta = os.path.join(CARPETA_TEST, "temp_tipos.json")
+    # Escribir JSON con tipos nativos (no strings)
+    datos = [
+        {
+            "id_solicitud": "SOL-T01",
+            "fecha_solicitud": "15/03/2025",
+            "tipo_producto": "CUENTA",
+            "id_cliente": "CLI-100",
+            "monto_o_limite": 50000,
+            "moneda": "ARS",
+            "pais": "Argentina",
+            "flag_prioritario": True,
+            "flag_digital": False,
+        },
+        {
+            "id_solicitud": "SOL-T02",
+            "fecha_solicitud": "20/03/2025",
+            "tipo_producto": "tarjeta",
+            "id_cliente": "CLI-200",
+            "monto_o_limite": 75000.5,
+            "moneda": "USD",
+            "pais": "Brasil",
+            "flag_prioritario": False,
+            "flag_digital": True,
+        },
+    ]
+    arch = open(ruta, "w", encoding="utf-8")
+    arch.write(json.dumps(datos))
+    arch.close()
+
+    resultado = ingesta.leer_solicitudes(ruta)
+
+    ok = True
+    if resultado == None:
+        print("  FALLO: resultado es None")
+        ok = False
+    elif len(resultado) != 2:
+        print("  FALLO: se esperaban 2 registros, se obtuvieron " + str(len(resultado)))
+        ok = False
+
+    # Verificar que todos los valores son string o None
+    if ok:
+        for reg in resultado:
+            for campo in reg.keys():
+                valor = reg[campo]
+                if valor != None and type(valor) != str:
+                    print(
+                        "  FALLO: campo '"
+                        + campo
+                        + "' tiene tipo "
+                        + str(type(valor))
+                        + " en vez de str"
+                    )
+                    ok = False
+
+    # Verificar conversion especifica
+    if ok:
+        if resultado[0]["monto_o_limite"] != "50000":
+            print(
+                "  FALLO: monto_o_limite deberia ser '50000', es '"
+                + str(resultado[0]["monto_o_limite"])
+                + "'"
+            )
+            ok = False
+        if resultado[0]["flag_prioritario"] != "True":
+            print(
+                "  FALLO: flag_prioritario deberia ser 'True', es '"
+                + str(resultado[0]["flag_prioritario"])
+                + "'"
+            )
+            ok = False
+
+    # Limpiar
+    os.remove(ruta)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
 def test_json_vacio():
     # DADO un archivo JSON con un array vacio []
     # CUANDO se ejecuta la ingesta
@@ -320,7 +406,7 @@ if __name__ == "__main__":
     print("TESTS DE INGESTA (RF-01)")
     print("=" * 50)
 
-    total = 9
+    total = 10
     aprobados = 0
 
     try:
@@ -360,6 +446,11 @@ if __name__ == "__main__":
         pass
     try:
         test_formato_no_soportado()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_json_tipos_nativos()
         aprobados += 1
     except AssertionError:
         pass
