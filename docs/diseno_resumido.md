@@ -1,7 +1,7 @@
 # Diseno Resumido - Etapa 1
 # Mini-Workflow Supervisado - Back-Office
 
-**Version**: 1.3  
+**Version**: 1.4  
 **Fecha**: Febrero 2026  
 **Formato**: version compacta para exportar a PDF (objetivo: 1-2 paginas)
 
@@ -12,11 +12,13 @@
 ### Diagrama de flujo
 
 ```
-solicitudes.csv
+solicitudes.csv / .json / .txt
       |
       v
 [1] INGESTA (ingesta.py)               ---> LOG INFO: registros leidos
-      |                                      LOG ERROR: archivo no encontrado
+      |   - detecta formato por extension    LOG ERROR: archivo no encontrado
+      |   - CSV (coma), JSON (array),        LOG ERROR: formato no soportado
+      |     TXT (pipe |)
       v
 [2] NORMALIZACION (normalizador.py)     ---> LOG WARN: fecha convertida de formato
       |   - trimming de espacios             LOG INFO: normalizacion completada
@@ -47,7 +49,7 @@ solicitudes.csv
 | Modulo | Responsabilidad | Requerimiento |
 |--------|-----------------|---------------|
 | `main.py` | Orquesta el flujo secuencial y exporta CSV | RF-05 |
-| `ingesta.py` | Lee CSV y retorna lista de diccionarios | RF-01 |
+| `ingesta.py` | Lee CSV, JSON o TXT y retorna lista de diccionarios | RF-01 |
 | `normalizador.py` | Normaliza fechas, casing, trimming, campo calculado | RF-02 |
 | `validador.py` | Aplica R1, R2, R3 y marca estado VALIDO/INVALIDO | RF-03 |
 | `calidad.py` | Genera reporte JSON con metricas por regla | RF-04 |
@@ -79,7 +81,7 @@ solicitudes.csv
 | Carpeta | Contenido |
 |---------|-----------|
 | `src/` | Codigo fuente, 1 modulo por responsabilidad |
-| `data/` | CSV de entrada + `ejecuciones/` (salidas versionadas por corrida) |
+| `data/` | Archivos de entrada (CSV/JSON/TXT) + `ejecuciones/` (salidas versionadas por corrida) |
 | `tests/` | Tests unitarios por modulo + end-to-end |
 | `docs/` | Documentacion de diseno y decisiones |
 
@@ -104,8 +106,10 @@ Formato de cada linea: `[YYYY-MM-DD HH:MM:SS] [NIVEL] [MODULO] Mensaje`.
 Propagacion: errores criticos se propagan al orquestador (`main.py`) que detiene el flujo. Errores de datos se acumulan por registro y se reportan en el JSON de calidad.
 
 **Supuestos tecnicos**:
-- Codificacion UTF-8. Separador CSV: coma (campos con comas se manejan entre comillas).
-- Archivo con header en primera linea. Un archivo por ejecucion, cabe en memoria.
+- Codificacion UTF-8. Separador CSV: coma (campos con comas se manejan entre comillas). Separador TXT: pipe (`|`).
+- Archivos CSV y TXT con header en primera linea. Archivos JSON como array de objetos.
+- Formato detectado automaticamente por extension (.csv, .json, .txt).
+- Un archivo por ejecucion, cabe en memoria.
 - Fechas de entrada: `DD/MM/YYYY`, `YYYY-MM-DD`, `DD-MM-YYYY`. Salida: siempre `DD/MM/YYYY`.
 - Python 3.10+, sin dependencias externas (solo stdlib; pytest para tests).
 
@@ -116,7 +120,7 @@ Propagacion: errores criticos se propagan al orquestador (`main.py`) que detiene
 **Mantenibilidad**:
 - Modulos con responsabilidad unica: modificar una regla no afecta ingesta ni normalizacion.
 - Agregar una regla R4 solo requiere una funcion nueva en `validador.py`; el reporte de calidad la detecta automaticamente (deteccion dinamica de reglas en `calidad.py`).
-- Tests unitarios por modulo (31 tests) + prueba end-to-end del workflow completo.
+- Tests unitarios por modulo (36 tests) + prueba end-to-end del workflow completo (CSV y JSON).
 - Decisiones tecnicas documentadas en `docs/registro_decisiones.md` con justificacion.
 
 **Code review - que revisaria**:

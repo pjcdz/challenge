@@ -9,6 +9,7 @@ sys.path.insert(
     0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
 )
 
+import json
 import logger
 import ingesta
 
@@ -178,13 +179,148 @@ def test_lineas_vacias_ignoradas():
     assert ok
 
 
+def test_lectura_json_valido():
+    # DADO un archivo JSON valido con un array de objetos
+    # CUANDO se ejecuta la ingesta
+    # ENTONCES se retorna una lista de diccionarios con los datos
+    print("TEST: test_lectura_json_valido")
+
+    ruta = os.path.join(CARPETA_TEST, "temp_valido.json")
+    datos = [
+        {"id_solicitud": "SOL-001", "tipo_producto": "cuenta", "moneda": "ARS"},
+        {"id_solicitud": "SOL-002", "tipo_producto": "tarjeta", "moneda": "USD"},
+    ]
+    arch = open(ruta, "w", encoding="utf-8")
+    arch.write(json.dumps(datos))
+    arch.close()
+
+    resultado = ingesta.leer_solicitudes(ruta)
+
+    ok = True
+    if resultado == None:
+        print("  FALLO: resultado es None")
+        ok = False
+    elif len(resultado) != 2:
+        print("  FALLO: se esperaban 2 registros, se obtuvieron " + str(len(resultado)))
+        ok = False
+    elif resultado[0]["id_solicitud"] != "SOL-001":
+        print("  FALLO: primer registro no tiene id_solicitud correcto")
+        ok = False
+    elif resultado[1]["moneda"] != "USD":
+        print("  FALLO: segundo registro no tiene moneda correcta")
+        ok = False
+
+    # Limpiar
+    os.remove(ruta)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
+def test_lectura_txt_valido():
+    # DADO un archivo TXT delimitado por pipe con header y datos
+    # CUANDO se ejecuta la ingesta
+    # ENTONCES se retorna una lista de diccionarios con los datos
+    print("TEST: test_lectura_txt_valido")
+
+    ruta = os.path.join(CARPETA_TEST, "temp_valido.txt")
+    arch = open(ruta, "w", encoding="utf-8")
+    arch.write("id_solicitud|tipo_producto|moneda\n")
+    arch.write("SOL-001|cuenta|ARS\n")
+    arch.write("SOL-002|tarjeta|USD\n")
+    arch.close()
+
+    resultado = ingesta.leer_solicitudes(ruta)
+
+    ok = True
+    if resultado == None:
+        print("  FALLO: resultado es None")
+        ok = False
+    elif len(resultado) != 2:
+        print("  FALLO: se esperaban 2 registros, se obtuvieron " + str(len(resultado)))
+        ok = False
+    elif resultado[0]["id_solicitud"] != "SOL-001":
+        print("  FALLO: primer registro no tiene id_solicitud correcto")
+        ok = False
+    elif resultado[1]["moneda"] != "USD":
+        print("  FALLO: segundo registro no tiene moneda correcta")
+        ok = False
+
+    # Limpiar
+    os.remove(ruta)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
+def test_formato_no_soportado():
+    # DADO un archivo con extension no soportada (.xlsx)
+    # CUANDO se intenta la ingesta
+    # ENTONCES se retorna None
+    print("TEST: test_formato_no_soportado")
+
+    ruta = os.path.join(CARPETA_TEST, "temp_invalido.xlsx")
+    arch = open(ruta, "w", encoding="utf-8")
+    arch.write("datos de prueba")
+    arch.close()
+
+    resultado = ingesta.leer_solicitudes(ruta)
+
+    ok = True
+    if resultado != None:
+        print("  FALLO: se esperaba None, se obtuvo " + str(type(resultado)))
+        ok = False
+
+    # Limpiar
+    os.remove(ruta)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
+def test_json_vacio():
+    # DADO un archivo JSON con un array vacio []
+    # CUANDO se ejecuta la ingesta
+    # ENTONCES se retorna lista vacia
+    print("TEST: test_json_vacio")
+
+    ruta = os.path.join(CARPETA_TEST, "temp_vacio.json")
+    arch = open(ruta, "w", encoding="utf-8")
+    arch.write("[]")
+    arch.close()
+
+    resultado = ingesta.leer_solicitudes(ruta)
+
+    ok = True
+    if resultado == None:
+        print("  FALLO: resultado es None (deberia ser lista vacia)")
+        ok = False
+    elif len(resultado) != 0:
+        print(
+            "  FALLO: se esperaba lista vacia, se obtuvieron "
+            + str(len(resultado))
+            + " registros"
+        )
+        ok = False
+
+    # Limpiar
+    os.remove(ruta)
+
+    if ok:
+        print("  OK")
+    assert ok
+
+
 # Ejecutar tests manualmente
 if __name__ == "__main__":
     print("=" * 50)
     print("TESTS DE INGESTA (RF-01)")
     print("=" * 50)
 
-    total = 5
+    total = 9
     aprobados = 0
 
     try:
@@ -209,6 +345,26 @@ if __name__ == "__main__":
         pass
     try:
         test_lineas_vacias_ignoradas()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_lectura_json_valido()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_lectura_txt_valido()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_formato_no_soportado()
+        aprobados += 1
+    except AssertionError:
+        pass
+    try:
+        test_json_vacio()
         aprobados += 1
     except AssertionError:
         pass

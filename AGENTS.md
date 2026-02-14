@@ -205,7 +205,7 @@ ELICITACION --> ANALISIS --> ESPECIFICACION --> VALIDACION
 ### Matriz de Trazabilidad
 | ID Req | Descripcion | Componente | Test | Estado |
 |--------|-------------|------------|------|--------|
-| RF-01 | Leer CSV | ingesta.py | test_ingesta | OK |
+| RF-01 | Leer CSV/JSON/TXT | ingesta.py | test_ingesta | OK |
 | RF-02 | Validar datos | validador.py | test_validador | OK |
 
 ### Historia de Usuario
@@ -244,7 +244,7 @@ Criterios de Aceptacion:
 ## 3.1 Challenge Tecnico - Contexto
 
 Una unidad de Back-Office recibe solicitudes de alta de productos (cuentas, tarjetas, servicios).
-Cada solicitud llega en CSV con campos: id_solicitud, fecha_solicitud, tipo_producto, id_cliente,
+Cada solicitud llega en CSV, JSON o TXT con campos: id_solicitud, fecha_solicitud, tipo_producto, id_cliente,
 monto_o_limite, moneda, pais, y 1-2 flags.
 
 ### Mini-Workflow requerido:
@@ -268,7 +268,7 @@ monto_o_limite, moneda, pais, y 1-2 flags.
 
 | Modulo | Requerimiento | Responsabilidad |
 |--------|---------------|-----------------|
-| ingesta.py | RF-01 | Leer CSV, retornar lista de registros |
+| ingesta.py | RF-01 | Leer CSV/JSON/TXT, retornar lista de registros |
 | normalizador.py | RF-02 | Normalizar fechas, trimming, mayusculas |
 | validador.py | RF-03 | Aplicar reglas R1, R2, R3 |
 | calidad.py | RF-04 | Generar reporte JSON de calidad |
@@ -320,7 +320,7 @@ monto_o_limite, moneda, pais, y 1-2 flags.
 - [ ] 3 reglas de validacion implementadas
 - [ ] Reporte JSON de calidad con totales y % cumplimiento
 - [ ] Logs con timestamps y niveles (info/warn/error)
-- [ ] Datos de entrada de ejemplo (CSV)
+- [ ] Datos de entrada de ejemplo (CSV, JSON, TXT)
 - [ ] Datos de salida normalizados
 - [ ] README con instrucciones de ejecucion
 

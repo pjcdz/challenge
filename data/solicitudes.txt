@@ -1,0 +1,16 @@
+id_solicitud|fecha_solicitud|tipo_producto|id_cliente|monto_o_limite|moneda|pais|flag_prioritario|flag_digital
+SOL-001|15/03/2025|cuenta|CLI-100|50000|ARS|Argentina|S|N
+SOL-002|2025-03-16|tarjeta|CLI-101|150000|USD| Brasil |N|S
+SOL-003|17-03-2025| CUENTA |CLI-102|75000|EUR|colombia|S|S
+SOL-004|20/03/2025|servicio|CLI-103|500001|ARS|Argentina|N|N
+SOL-005|2025-03-21|tarjeta|CLI-104|-500|USD|Chile|S|N
+SOL-006|22/03/2025|cuenta|CLI-105|999999999|ARS|Argentina|N|S
+SOL-007|2025-03-23|tarjeta||45000|ARS|Argentina|S|N
+SOL-008|24/03/2025|servicio|CLI-107|200000|USD|Peru|N|S
+SOL-009|25-03-2025|cuenta|CLI-108|30000|ARS|Argentina|S|N
+SOL-010|2025-03-26|tarjeta|CLI-109|80000|GBP|Reino Unido|N|N
+SOL-011|27/03/2025|cuenta|CLI-110|0|ARS|Argentina|S|S
+SOL-012|32/13/2025|servicio|CLI-111|120000|USD|Mexico|N|N
+SOL-013|29/03/2025|tarjeta|CLI-112|450000|EUR|espana|S|N
+SOL-014|2025-03-30|cuenta|CLI-113|50001|ARS| argentina |N|S
+SOL-015|31/03/2025||CLI-114|60000|USD|Chile|S|N

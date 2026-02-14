@@ -1,7 +1,7 @@
-﻿# Documento de Diseno - SRS
+# Documento de Diseno - SRS
 # Mini-Workflow Supervisado: Alta de Productos Back-Office
 
-**Version**: 1.5
+**Version**: 1.6
 **Fecha**: Febrero 2026
 **Autor**: Candidato
 
@@ -17,7 +17,7 @@ Sirve como guia para el diseno, implementacion y validacion del sistema.
 
 ### 1.2 Alcance
 
-El sistema procesa archivos CSV con solicitudes de alta de productos (cuentas, tarjetas,
+El sistema procesa archivos CSV, JSON y TXT con solicitudes de alta de productos (cuentas, tarjetas,
 servicios). El alcance incluye:
 - Ingesta de archivos de solicitudes
 - Normalizacion de campos
@@ -36,6 +36,8 @@ autenticacion de usuarios, procesamiento en tiempo real.
 | RF | Requerimiento Funcional |
 | RNF | Requerimiento No Funcional |
 | CSV | Comma-Separated Values |
+| JSON | JavaScript Object Notation |
+| TXT | Archivo de texto delimitado por pipe |
 | Back-Office | Unidad administrativa que procesa solicitudes internas |
 | Solicitud | Registro de alta de un producto financiero |
 | Elegibilidad | Cumplimiento de reglas para aprobar una solicitud |
@@ -59,9 +61,9 @@ mas alla de la libreria estandar de Python.
 ### 2.2 Funciones del Producto
 
 ```
-ENTRADA (solicitudes.csv)
+ENTRADA (solicitudes.csv / .json / .txt)
   -> PROCESAMIENTO
-     1) Ingesta
+     1) Ingesta (detecta formato por extension)
      2) Normalizacion (fechas, trimming, upper/lower, campo calculado)
   -> VALIDACION
      3) R1 Campos obligatorios
@@ -79,7 +81,7 @@ LOGS transversal en todas las etapas (INFO/WARN/ERROR)
 
 | Rol | Descripcion | Interaccion |
 |-----|-------------|-------------|
-| Operador Back-Office | Ejecuta el workflow | Provee archivo CSV de entrada |
+| Operador Back-Office | Ejecuta el workflow | Provee archivo CSV, JSON o TXT de entrada |
 | Auditor | Revisa resultados | Consulta reporte y logs |
 | Desarrollador | Mantiene el sistema | Modifica reglas y modulos |
 
@@ -87,17 +89,22 @@ LOGS transversal en todas las etapas (INFO/WARN/ERROR)
 
 - Python 3.10+ (sin dependencias externas)
 - Archivos de entrada en codificacion UTF-8
+- Formatos de entrada soportados: CSV (coma), JSON (array de objetos), TXT (pipe `|`)
 - Formato de fecha de entrada: acepta DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY
 - Formato de fecha de salida normalizado: DD/MM/YYYY
 - Separador CSV: coma (,)
+- Separador TXT: pipe (|)
 
 ### 2.5 Supuestos Tecnicos
 
 1. Los archivos CSV tienen header (primera linea con nombres de columna)
-2. El separador es siempre coma
-3. Codificacion UTF-8
-4. Un archivo por ejecucion del workflow
-5. El archivo cabe en memoria (no se esperan archivos de millones de registros)
+2. Los archivos TXT usan pipe (`|`) como separador y tienen header en la primera linea
+3. Los archivos JSON contienen un array de objetos con claves iguales a los campos esperados
+4. El formato se detecta automaticamente por extension del archivo (.csv, .json, .txt)
+5. El separador CSV es siempre coma
+6. Codificacion UTF-8
+7. Un archivo por ejecucion del workflow
+8. El archivo cabe en memoria (no se esperan archivos de millones de registros)
 
 ---
 
@@ -107,23 +114,32 @@ LOGS transversal en todas las etapas (INFO/WARN/ERROR)
 
 #### RF-01: Ingesta de Archivos
 
-**Objetivo SMART**: Leer archivos CSV de solicitudes y convertirlos en una estructura
+**Objetivo SMART**: Leer archivos CSV, JSON o TXT de solicitudes y convertirlos en una estructura
 de datos procesable, en menos de 1 segundo para archivos de hasta 1000 registros.
 
-**Descripcion**: El sistema debe leer un archivo CSV con los campos:
-`id_solicitud, fecha_solicitud, tipo_producto, id_cliente, monto_o_limite, moneda, pais, flag_prioritario, flag_digital`
+**Descripcion**: El sistema debe leer un archivo de solicitudes en formato CSV, JSON o TXT.
+El formato se detecta automaticamente por la extension del archivo.
+Campos esperados: `id_solicitud, fecha_solicitud, tipo_producto, id_cliente, monto_o_limite, moneda, pais, flag_prioritario, flag_digital`
+
+Formatos soportados:
+- **CSV**: separado por comas, primera linea es header
+- **JSON**: array de objetos, cada objeto tiene las claves de los campos
+- **TXT**: delimitado por pipe (`|`), primera linea es header
 
 **Historia de Usuario**:
 ```
 COMO operador de Back-Office
-QUIERO cargar un archivo CSV de solicitudes
+QUIERO cargar un archivo de solicitudes en formato CSV, JSON o TXT
 PARA iniciar el proceso de alta de productos
 ```
 
 **Criterios de Aceptacion**:
 - DADO un archivo CSV valido con header CUANDO se ejecuta la ingesta ENTONCES se retorna una lista de diccionarios con los datos
-- DADO un archivo CSV inexistente CUANDO se intenta la ingesta ENTONCES se registra un error y se detiene el workflow
-- DADO un archivo CSV vacio (solo header) CUANDO se ejecuta la ingesta ENTONCES se registra un warning y se retorna lista vacia
+- DADO un archivo JSON valido con array de objetos CUANDO se ejecuta la ingesta ENTONCES se retorna una lista de diccionarios con los datos
+- DADO un archivo TXT valido delimitado por pipe CUANDO se ejecuta la ingesta ENTONCES se retorna una lista de diccionarios con los datos
+- DADO un archivo con extension no soportada CUANDO se intenta la ingesta ENTONCES se registra un error y se retorna None
+- DADO un archivo inexistente CUANDO se intenta la ingesta ENTONCES se registra un error y se detiene el workflow
+- DADO un archivo vacio (solo header o array vacio) CUANDO se ejecuta la ingesta ENTONCES se registra un warning y se retorna lista vacia
 
 **Componente**: `src/ingesta.py`
 **Test**: `tests/test_ingesta.py`
@@ -285,8 +301,9 @@ WORKFLOW PRINCIPAL (main.py)
   +--> LOG inicio (INFO) -> workflow.log en carpeta de ejecucion
   |
   +--> PASO 1 INGESTA (ingesta.py)
-  |      - leer_solicitudes(archivo_entrada)
-  |      - INFO exito / ERROR si archivo no existe
+  |      - detectar_formato(archivo) -> csv / json / txt / None
+  |      - leer_solicitudes(archivo) -> despacha segun formato
+  |      - INFO exito / ERROR si archivo no existe o formato no soportado
   |
   +--> PASO 2 NORMALIZACION (normalizador.py)
   |      - trimming, fecha DD/MM/YYYY, upper/lower, categoria_riesgo
@@ -336,7 +353,9 @@ challenge/
 │   ├── logger.py            # RNF-01
 │   └── main.py              # RF-05 (orquestador)
 ├── data/                   # Datos de entrada y salida
-│   ├── solicitudes.csv      # Entrada de ejemplo
+│   ├── solicitudes.csv      # Entrada de ejemplo (CSV)
+│   ├── solicitudes.json     # Entrada de ejemplo (JSON)
+│   ├── solicitudes.txt      # Entrada de ejemplo (TXT pipe-delimited)
 │   └── ejecuciones/         # Salidas versionadas por ejecucion
 │       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
 │           ├── solicitudes_limpias.csv
@@ -409,6 +428,7 @@ En una code review se revisaria:
 | Archivo no encontrado | Baja | Alto | Validar existencia antes de procesar, log ERROR |
 | Monto con formato incorrecto | Media | Medio | Intentar conversion, si falla marcar invalido |
 | Encoding incorrecto del CSV | Baja | Alto | Asumir UTF-8, documentar supuesto |
+| Formato de archivo no soportado | Baja | Alto | Detectar extension, log ERROR, retornar None |
 
 ---
 
@@ -416,11 +436,11 @@ En una code review se revisaria:
 
 | ID | Requerimiento | Componente | Funcion Principal | Test | Estado |
 |----|---------------|------------|-------------------|------|--------|
-| RF-01 | Ingesta de archivos | src/ingesta.py | leer_solicitudes() | tests/test_ingesta.py (5/5) | Completo |
+| RF-01 | Ingesta de archivos (CSV/JSON/TXT) | src/ingesta.py | leer_solicitudes() | tests/test_ingesta.py (9/9) | Completo |
 | RF-02 | Normalizacion de campos | src/normalizador.py | normalizar_registros() | tests/test_normalizador.py (6/6) | Completo |
 | RF-03 | Validacion de elegibilidad | src/validador.py | validar_registros() | tests/test_validador.py (12/12) | Completo |
 | RF-04 | Control de calidad | src/calidad.py | generar_reporte() | tests/test_calidad.py (3/3) | Completo |
-| RF-05 | Orquestacion workflow | src/main.py | main() | tests/test_main.py (5/5) | Completo |
+| RF-05 | Orquestacion workflow | src/main.py | main() | tests/test_main.py (6/6) | Completo |
 | RNF-01 | Logging y trazabilidad | src/logger.py | registrar() | Verificado en logs generados | Completo |
 | RNF-02 | Rendimiento (<5s/1000 reg) | (todos) | - | 0.01s para 15 registros | Completo |
 | RNF-03 | Mantenibilidad | (todos) | - | Modulos independientes, snake_case | Completo |
@@ -429,12 +449,30 @@ En una code review se revisaria:
 
 ## 8. Formato de Datos
 
-### 8.1 Entrada (solicitudes.csv)
+### 8.1 Entrada (solicitudes.csv / .json / .txt)
 
+El sistema acepta tres formatos de entrada. El formato se detecta automaticamente por extension.
+
+**CSV** (separado por comas):
 ```csv
 id_solicitud,fecha_solicitud,tipo_producto,id_cliente,monto_o_limite,moneda,pais,flag_prioritario,flag_digital
 SOL-001,15/03/2025,cuenta,CLI-100,50000,ARS,Argentina,S,N
 SOL-002,2025-03-16,tarjeta,CLI-101,150000,USD,Brasil,N,S
+```
+
+**JSON** (array de objetos):
+```json
+[
+    {"id_solicitud": "SOL-001", "fecha_solicitud": "15/03/2025", "tipo_producto": "cuenta", "id_cliente": "CLI-100", "monto_o_limite": "50000", "moneda": "ARS", "pais": "Argentina", "flag_prioritario": "S", "flag_digital": "N"},
+    {"id_solicitud": "SOL-002", "fecha_solicitud": "2025-03-16", "tipo_producto": "tarjeta", "id_cliente": "CLI-101", "monto_o_limite": "150000", "moneda": "USD", "pais": "Brasil", "flag_prioritario": "N", "flag_digital": "S"}
+]
+```
+
+**TXT** (delimitado por pipe `|`):
+```
+id_solicitud|fecha_solicitud|tipo_producto|id_cliente|monto_o_limite|moneda|pais|flag_prioritario|flag_digital
+SOL-001|15/03/2025|cuenta|CLI-100|50000|ARS|Argentina|S|N
+SOL-002|2025-03-16|tarjeta|CLI-101|150000|USD|Brasil|N|S
 ```
 
 ### 8.2 Salida Normalizada (`data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/solicitudes_limpias.csv`)

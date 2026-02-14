@@ -1,7 +1,7 @@
 # Challenge Tecnico - Mini-Workflow Supervisado Back-Office
 
 Mini-workflow para una unidad de Back-Office que procesa solicitudes de alta de productos (cuentas, tarjetas y servicios).  
-Lee un CSV, normaliza, valida con 3 reglas de elegibilidad, genera un reporte de calidad JSON y registra logs con trazabilidad completa.
+Lee archivos CSV, JSON o TXT, normaliza, valida con 3 reglas de elegibilidad, genera un reporte de calidad JSON y registra logs con trazabilidad completa.
 
 ## Estructura del Proyecto
 
@@ -18,6 +18,8 @@ challenge/
 │   └── logger.py
 ├── data/
 │   ├── solicitudes.csv
+│   ├── solicitudes.json
+│   ├── solicitudes.txt
 │   └── ejecuciones/
 │       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
 │           ├── solicitudes_limpias.csv
@@ -69,10 +71,10 @@ python -m pytest tests/ -v
 ## Flujo del Workflow
 
 ```text
-solicitudes.csv
+solicitudes.csv / .json / .txt
     |
     v
-[1] INGESTA -> lee CSV y arma registros
+[1] INGESTA -> detecta formato por extension, lee y arma registros
     |
     v
 [2] NORMALIZACION -> trimming, upper/lower, fecha DD/MM/YYYY, categoria_riesgo
@@ -98,6 +100,16 @@ solicitudes.csv
 ## Campos de Entrada
 
 `id_solicitud, fecha_solicitud, tipo_producto, id_cliente, monto_o_limite, moneda, pais, flag_prioritario, flag_digital`
+
+## Formatos de Entrada Soportados
+
+| Formato | Extension | Separador | Ejemplo |
+|---|---|---|---|
+| CSV | `.csv` | Coma (`,`) | `data/solicitudes.csv` |
+| JSON | `.json` | Array de objetos | `data/solicitudes.json` |
+| TXT | `.txt` | Pipe (`\|`) | `data/solicitudes.txt` |
+
+El formato se detecta automaticamente por la extension del archivo. La salida siempre es CSV.
 
 ## Documentacion
 

@@ -1,0 +1,167 @@
+[
+    {
+        "id_solicitud": "SOL-001",
+        "fecha_solicitud": "15/03/2025",
+        "tipo_producto": "cuenta",
+        "id_cliente": "CLI-100",
+        "monto_o_limite": "50000",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-002",
+        "fecha_solicitud": "2025-03-16",
+        "tipo_producto": "tarjeta",
+        "id_cliente": "CLI-101",
+        "monto_o_limite": "150000",
+        "moneda": "USD",
+        "pais": " Brasil ",
+        "flag_prioritario": "N",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-003",
+        "fecha_solicitud": "17-03-2025",
+        "tipo_producto": " CUENTA ",
+        "id_cliente": "CLI-102",
+        "monto_o_limite": "75000",
+        "moneda": "EUR",
+        "pais": "colombia",
+        "flag_prioritario": "S",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-004",
+        "fecha_solicitud": "20/03/2025",
+        "tipo_producto": "servicio",
+        "id_cliente": "CLI-103",
+        "monto_o_limite": "500001",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "N",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-005",
+        "fecha_solicitud": "2025-03-21",
+        "tipo_producto": "tarjeta",
+        "id_cliente": "CLI-104",
+        "monto_o_limite": "-500",
+        "moneda": "USD",
+        "pais": "Chile",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-006",
+        "fecha_solicitud": "22/03/2025",
+        "tipo_producto": "cuenta",
+        "id_cliente": "CLI-105",
+        "monto_o_limite": "999999999",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "N",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-007",
+        "fecha_solicitud": "2025-03-23",
+        "tipo_producto": "tarjeta",
+        "id_cliente": "",
+        "monto_o_limite": "45000",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-008",
+        "fecha_solicitud": "24/03/2025",
+        "tipo_producto": "servicio",
+        "id_cliente": "CLI-107",
+        "monto_o_limite": "200000",
+        "moneda": "USD",
+        "pais": "Peru",
+        "flag_prioritario": "N",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-009",
+        "fecha_solicitud": "25-03-2025",
+        "tipo_producto": "cuenta",
+        "id_cliente": "CLI-108",
+        "monto_o_limite": "30000",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-010",
+        "fecha_solicitud": "2025-03-26",
+        "tipo_producto": "tarjeta",
+        "id_cliente": "CLI-109",
+        "monto_o_limite": "80000",
+        "moneda": "GBP",
+        "pais": "Reino Unido",
+        "flag_prioritario": "N",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-011",
+        "fecha_solicitud": "27/03/2025",
+        "tipo_producto": "cuenta",
+        "id_cliente": "CLI-110",
+        "monto_o_limite": "0",
+        "moneda": "ARS",
+        "pais": "Argentina",
+        "flag_prioritario": "S",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-012",
+        "fecha_solicitud": "32/13/2025",
+        "tipo_producto": "servicio",
+        "id_cliente": "CLI-111",
+        "monto_o_limite": "120000",
+        "moneda": "USD",
+        "pais": "Mexico",
+        "flag_prioritario": "N",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-013",
+        "fecha_solicitud": "29/03/2025",
+        "tipo_producto": "tarjeta",
+        "id_cliente": "CLI-112",
+        "monto_o_limite": "450000",
+        "moneda": "EUR",
+        "pais": "espana",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    },
+    {
+        "id_solicitud": "SOL-014",
+        "fecha_solicitud": "2025-03-30",
+        "tipo_producto": "cuenta",
+        "id_cliente": "CLI-113",
+        "monto_o_limite": "50001",
+        "moneda": "ARS",
+        "pais": " argentina ",
+        "flag_prioritario": "N",
+        "flag_digital": "S"
+    },
+    {
+        "id_solicitud": "SOL-015",
+        "fecha_solicitud": "31/03/2025",
+        "tipo_producto": "",
+        "id_cliente": "CLI-114",
+        "monto_o_limite": "60000",
+        "moneda": "USD",
+        "pais": "Chile",
+        "flag_prioritario": "S",
+        "flag_digital": "N"
+    }
+]

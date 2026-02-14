@@ -198,6 +198,34 @@ y dentro guarda:
 
 ---
 
+## DEC-10: Soporte multi-formato (CSV, JSON, TXT)
+
+**Fecha**: Febrero 2026
+**Estado**: Aprobada
+**Contexto**: El enunciado del challenge tecnico indica que las solicitudes pueden llegar
+en formato CSV, JSON o TXT. La implementacion inicial solo soportaba CSV.
+
+**Decision**: Agregar soporte para JSON (array de objetos) y TXT (delimitado por pipe `|`),
+detectando el formato automaticamente por la extension del archivo.
+
+**Justificacion**:
+- El enunciado explicitamente dice "CSV/JSON/TXT" (docs/challenge_tecnico.md, linea 10)
+- La deteccion por extension es simple, predecible y no requiere heuristicas de contenido
+- Cada formato tiene su funcion dedicada (`leer_json()`, `leer_txt()`) manteniendo modularidad
+- Si la extension no es soportada, se retorna None y se loguea ERROR
+- La salida siempre es CSV independientemente del formato de entrada
+
+**Formatos**:
+- **CSV**: separado por comas, primera linea es header (comportamiento existente)
+- **JSON**: array de objetos `[{"campo": "valor", ...}, ...]`
+- **TXT**: delimitado por pipe (`|`), primera linea es header
+
+**Alternativas descartadas**:
+- Deteccion por contenido (sniffing): fragil, ambigua y mas compleja de implementar
+- Parametro de formato obligatorio: agrega friccion al operador sin beneficio real
+
+---
+
 ## Resumen de Decisiones
 
 | ID | Titulo | Prioridad | Modulos afectados |
@@ -211,3 +239,4 @@ y dentro guarda:
 | DEC-07 | Python 3.10+ unificado | Baja | docs/ |
 | DEC-08 | Logger propio | Media | logger.py |
 | DEC-09 | Artefactos por ejecucion | Alta | main.py, logger.py, docs/, tests/ |
+| DEC-10 | Soporte multi-formato CSV/JSON/TXT | Alta | ingesta.py, docs/, tests/ |
