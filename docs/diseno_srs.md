@@ -326,26 +326,29 @@ WORKFLOW PRINCIPAL (main.py)
 
 ```
 challenge/
-|- src/                    # Codigo fuente (1 modulo por responsabilidad)
-|  |- ingesta.py           # RF-01
-|  |- normalizador.py      # RF-02
-|  |- validador.py         # RF-03
-|  |- calidad.py           # RF-04
-|  |- logger.py            # RNF-01
-|  `- main.py              # RF-05 (orquestador)
-|- data/                   # Datos de entrada y salida
-|  |- solicitudes.csv      # Entrada de ejemplo
-|  `- ejecuciones/         # Salidas versionadas por ejecucion
-|     `- ejecucion_YYYYMMDD_HHMMSS_<archivo>/
-|        |- solicitudes_limpias.csv
-|        |- reporte_calidad.json
-|        `- workflow.log
-|- docs/                   # Documentacion
-|  |- challenge_tecnico.md
-|  |- diseno_srs.md
-|  `- registro_decisiones.md
-|- tests/                  # Tests unitarios
-`- README.md               # Instrucciones de ejecucion
+├── CLAUDE.md
+├── AGENTS.md
+├── src/                    # Codigo fuente (1 modulo por responsabilidad)
+│   ├── ingesta.py           # RF-01
+│   ├── normalizador.py      # RF-02
+│   ├── validador.py         # RF-03
+│   ├── calidad.py           # RF-04
+│   ├── logger.py            # RNF-01
+│   └── main.py              # RF-05 (orquestador)
+├── data/                   # Datos de entrada y salida
+│   ├── solicitudes.csv      # Entrada de ejemplo
+│   └── ejecuciones/         # Salidas versionadas por ejecucion
+│       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+│           ├── solicitudes_limpias.csv
+│           ├── reporte_calidad.json
+│           └── workflow.log
+├── docs/                   # Documentacion
+│   ├── challenge_tecnico.md
+│   ├── diseno_resumido.md
+│   ├── diseno_srs.md
+│   └── registro_decisiones.md
+├── tests/                  # Tests unitarios
+└── README.md               # Instrucciones de ejecucion
 ```
 
 **Nota de version 1.5**: las salidas de ejecucion ya no se escriben en la raiz de `data/`.  

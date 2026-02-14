@@ -7,6 +7,8 @@ Lee un CSV, normaliza, valida con 3 reglas de elegibilidad, genera un reporte de
 
 ```text
 challenge/
+├── CLAUDE.md
+├── AGENTS.md
 ├── src/
 │   ├── main.py
 │   ├── ingesta.py
@@ -103,3 +105,4 @@ solicitudes.csv
 - `docs/diseno_srs.md`: especificacion completa (SRS extendido).
 - `docs/registro_decisiones.md`: decisiones tecnicas del proyecto.
 - `docs/challenge_tecnico.md`: enunciado original.
+

@@ -82,26 +82,31 @@ Retorna: Contexto combinado de Python style + Requirements Engineering
 
 ## Estructura del Challenge
 
-```
+```text
 challenge/
 ├── CLAUDE.md          # Este archivo - instrucciones IA
 ├── AGENTS.md          # Knowledge base expandida
 ├── src/               # Codigo fuente
-│   ├── ingesta.py     # RF-01: Lectura de archivos de solicitudes
+│   ├── ingesta.py      # RF-01: Lectura de archivos de solicitudes
 │   ├── normalizador.py # RF-02: Normalizacion de campos
-│   ├── validador.py   # RF-03: Validacion de reglas de elegibilidad
-│   ├── calidad.py     # RF-04: Control de calidad y reporte
-│   ├── logger.py      # RNF-01: Sistema de logging
-│   └── main.py        # Orquestador del workflow
-├── docs/              # Documentacion (SRS, diagramas)
+│   ├── validador.py    # RF-03: Validacion de reglas de elegibilidad
+│   ├── calidad.py      # RF-04: Control de calidad y reporte
+│   ├── logger.py       # RNF-01: Sistema de logging
+│   └── main.py         # Orquestador del workflow
+├── docs/              # Documentacion (SRS, resumen y decisiones)
 │   ├── challenge_tecnico.md  # Enunciado original del challenge
-│   └── diseno_srs.md         # Documento de diseno SRS
+│   ├── diseno_resumido.md    # Diseno resumido (Etapa 1)
+│   ├── diseno_srs.md         # Documento de diseno SRS
+│   └── registro_decisiones.md
 ├── tests/             # Tests
-└── data/              # Datos de entrada/salida
-    ├── solicitudes.csv       # Entrada
-    ├── solicitudes_limpias.csv # Salida normalizada
-    ├── reporte_calidad.json  # Reporte de calidad
-    └── logs/                 # Archivos de log
+├── data/              # Datos de entrada y salidas por corrida
+│   ├── solicitudes.csv
+│   └── ejecuciones/
+│       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+│           ├── solicitudes_limpias.csv
+│           ├── reporte_calidad.json
+│           └── workflow.log
+└── README.md
 ```
 
 ## Criterios de Evaluacion del Challenge (CUMPLIR TODOS)
@@ -155,3 +160,4 @@ El diseno DEBE seguir:
 - Checklist de validacion de requerimientos
 
 **Aplicar TODO el conocimiento de ingenieria de requerimientos del usuario.**
+

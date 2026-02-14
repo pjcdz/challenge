@@ -324,6 +324,20 @@ monto_o_limite, moneda, pais, y 1-2 flags.
 - [ ] Datos de salida normalizados
 - [ ] README con instrucciones de ejecucion
 
+## 3.7 Estructura Canonica y Rutas de Salida
+
+Para mantener concordancia con `README.md`, `CLAUDE.md` y `docs/diseno_srs.md`:
+
+- Documentacion oficial en `docs/`:
+  - `challenge_tecnico.md`
+  - `diseno_resumido.md`
+  - `diseno_srs.md`
+  - `registro_decisiones.md`
+- Salidas del workflow por corrida (no en la raiz de `data/`):
+  - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/solicitudes_limpias.csv`
+  - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/reporte_calidad.json`
+  - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/workflow.log`
+
 ---
 
 # REFERENCIA RAPIDA: MCP Tools
