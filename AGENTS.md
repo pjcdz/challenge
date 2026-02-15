@@ -268,12 +268,19 @@ monto_o_limite, moneda, pais, y 1-2 flags.
 
 | Modulo | Requerimiento | Responsabilidad |
 |--------|---------------|-----------------|
-| ingesta.py | RF-01 | Leer CSV/JSON/TXT, retornar lista de registros |
-| normalizador.py | RF-02 | Normalizar fechas, trimming, mayusculas |
-| validador.py | RF-03 | Aplicar reglas R1, R2, R3 |
-| calidad.py | RF-04 | Generar reporte JSON de calidad |
-| logger.py | RNF-01 | Logging con timestamps y niveles |
-| main.py | RF-05 | Orquestar todo el workflow |
+| `main.py` (root) | RF-08 | Orquestar menu/CLI para legacy, ai_first, comparar y generar |
+| `legacy_system/src/ingesta.py` | RF-01 | Leer CSV/JSON/TXT, retornar lista de registros |
+| `legacy_system/src/normalizador.py` | RF-02 | Normalizar fechas, trimming, mayusculas |
+| `legacy_system/src/validador.py` | RF-03 | Aplicar reglas R1, R2, R3 |
+| `legacy_system/src/calidad.py` | RF-04 | Generar reporte JSON de calidad |
+| `legacy_system/src/logger.py` | RNF-01 | Logging con timestamps y niveles |
+| `ai_first_system/src/router_ambiguedad.py` | RF-03 | Enrutar `rule_path` vs `llm_path` |
+| `ai_first_system/src/graph/workflow_graph.py` | RF-04 | Resolver casos ambiguos con retry/fallback |
+| `ai_first_system/src/guardrails/` | RF-05 | Validar schema y aplicar fallback seguro |
+| `ai_first_system/src/adapters/gemini_adapter.py` | RF-05 | Integrar Gemini real y telemetria de usage |
+| `metrics/benchmark_runner.py` | RF-06 | Comparar legacy vs ai_first y generar reportes |
+| `metrics/metricas.py` | RF-06 | Consolidar metricas de calidad, costo y disponibilidad |
+| `metrics/data_generator.py` | RF-07 | Generar datasets sinteticos reproducibles |
 
 ## 3.4 Reglas de Validacion
 
@@ -332,11 +339,31 @@ Para mantener concordancia con `README.md`, `CLAUDE.md` y `docs/diseno_srs.md`:
   - `challenge_tecnico.md`
   - `diseno_resumido.md`
   - `diseno_srs.md`
+  - `diseno_srs_ai_first.md`
   - `registro_decisiones.md`
 - Salidas del workflow por corrida (no en la raiz de `data/`):
   - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/solicitudes_limpias.csv`
   - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/reporte_calidad.json`
   - `data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/workflow.log`
+
+## 3.8 Politica AI-First Obligatoria (Estado Actual)
+
+- Provider por defecto: `gemini`.
+- Prohibido usar mocks/stubs/fakes de LLM en runtime y en pruebas de contrato/integracion.
+- Configuracion obligatoria en `.env.local`:
+  - `GEMINI_API_KEY`
+  - `GEMINI_GEMMA_MODEL`
+  - `GEMINI_EMBEDDING_MODEL`
+- Si falta configuracion, AI-First debe fallar con mensaje claro (sin fallback mock).
+
+## 3.9 Validacion y Metricas (Estado Actual)
+
+- Tests de contrato (`tests/contract/test_contract.py`) deben forzar casos ambiguos reales y verificar:
+  - `stats["llm_path"] > 0`
+  - incremento de llamadas del provider (`total_llamadas` o equivalente)
+- Benchmark y metricas deben evitar subreporte:
+  - si hay llamadas LLM reales sin usage metadata, tokens/costo se reportan como `NO_DISPONIBLE` (`null` en JSON)
+  - usar estados explicitos: `sin_llamadas`, `completo`, `parcial`, `sin_datos`, `no_disponible`
 
 ---
 

@@ -1,0 +1,535 @@
+[
+  {
+    "id_solicitud": "SYNTH-0031",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Brasil"
+  },
+  {
+    "id_solicitud": "SYNTH-0012",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Uruguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0006",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0023",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Peru"
+  },
+  {
+    "id_solicitud": "SYNTH-0018",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0045",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "pais"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Brasil",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0042",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Mexico",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0026",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Argentina"
+  },
+  {
+    "id_solicitud": "SYNTH-0027",
+    "estado_esperado": "INVALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "R2: moneda no soportada: GBP",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "GBP",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0010",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0022",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0030",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Uruguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0004",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Argentina"
+  },
+  {
+    "id_solicitud": "SYNTH-0038",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Brasil"
+  },
+  {
+    "id_solicitud": "SYNTH-0014",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0044",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Argentina",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0036",
+    "estado_esperado": "INVALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "R3: monto fuera de rango",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Uruguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0041",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Peru",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0001",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0037",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Uruguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0020",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0011",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0048",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "moneda"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "requiere_llm",
+    "pais_normalizado": "Paraguay",
+    "estado_esperado": "depende_resolucion",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0024",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0015",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Paraguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0009",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Peru"
+  },
+  {
+    "id_solicitud": "SYNTH-0046",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud",
+      "pais"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Colombia",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0003",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0035",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Argentina"
+  },
+  {
+    "id_solicitud": "SYNTH-0050",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "moneda",
+      "tipo_producto"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Colombia",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0013",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Brasil"
+  },
+  {
+    "id_solicitud": "SYNTH-0040",
+    "estado_esperado": "INVALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "R2: moneda no soportada: GBP",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "GBP",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0007",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Paraguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0016",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0033",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Brasil"
+  },
+  {
+    "id_solicitud": "SYNTH-0021",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0028",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0049",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Uruguay",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0032",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0019",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Paraguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0047",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "fecha_solicitud",
+      "pais"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Argentina",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  },
+  {
+    "id_solicitud": "SYNTH-0008",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Paraguay"
+  },
+  {
+    "id_solicitud": "SYNTH-0025",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SERVICIO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0005",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Peru"
+  },
+  {
+    "id_solicitud": "SYNTH-0017",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Peru"
+  },
+  {
+    "id_solicitud": "SYNTH-0039",
+    "estado_esperado": "VALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "TARJETA",
+    "moneda_normalizada": "ARS",
+    "pais_normalizado": "Chile"
+  },
+  {
+    "id_solicitud": "SYNTH-0002",
+    "estado_esperado": "VALIDO",
+    "tipo": "limpio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "",
+    "tipo_producto_normalizado": "SEGURO",
+    "moneda_normalizada": "EUR",
+    "pais_normalizado": "Peru"
+  },
+  {
+    "id_solicitud": "SYNTH-0034",
+    "estado_esperado": "INVALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "R2: moneda no soportada: GBP",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "GBP",
+    "pais_normalizado": "Mexico"
+  },
+  {
+    "id_solicitud": "SYNTH-0029",
+    "estado_esperado": "INVALIDO",
+    "tipo": "sucio",
+    "origen_esperado": "rule_path",
+    "motivos_falla_esperados": "R3: monto fuera de rango",
+    "tipo_producto_normalizado": "CUENTA",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Argentina"
+  },
+  {
+    "id_solicitud": "SYNTH-0043",
+    "tipo": "ambiguo",
+    "campos_ambiguos": [
+      "moneda"
+    ],
+    "origen_esperado": "llm_path",
+    "tipo_producto_normalizado": "PRESTAMO",
+    "moneda_normalizada": "USD",
+    "pais_normalizado": "Mexico",
+    "estado_esperado": "VALIDO",
+    "motivos_falla_esperados": ""
+  }
+]

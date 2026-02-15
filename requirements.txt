@@ -1,0 +1,20 @@
+# Dependencias del proyecto Challenge Tecnico
+# Sistema legacy: stdlib unicamente (sin dependencias externas)
+# Sistema AI-First: las siguientes dependencias
+
+# Carga de variables de entorno
+python-dotenv>=1.0.0
+
+# Validacion de schemas (guardrails)
+pydantic>=2.0.0
+
+# Provider LLM (Gemini)
+google-genai>=1.0.0
+google-generativeai>=0.8.0
+
+# Grafo de workflow (orquestacion)
+langgraph>=0.2.0
+langchain-core>=0.3.0
+
+# Tests
+pytest>=8.0.0

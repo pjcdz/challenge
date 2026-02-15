@@ -141,7 +141,7 @@ PARA iniciar el proceso de alta de productos
 - DADO un archivo inexistente CUANDO se intenta la ingesta ENTONCES se registra un error y se detiene el workflow
 - DADO un archivo vacio (solo header o array vacio) CUANDO se ejecuta la ingesta ENTONCES se registra un warning y se retorna lista vacia
 
-**Componente**: `src/ingesta.py`
+**Componente**: `legacy_system/src/ingesta.py`
 **Test**: `tests/test_ingesta.py`
 
 ---
@@ -172,7 +172,7 @@ PARA tener consistencia en los registros procesados
 - DADO un registro con tipo_producto "  cuenta " CUANDO se normaliza ENTONCES queda "CUENTA"
 - DADO un registro con monto 75000 CUANDO se normaliza ENTONCES categoria_riesgo es "MEDIO"
 
-**Componente**: `src/normalizador.py`
+**Componente**: `legacy_system/src/normalizador.py`
 **Test**: `tests/test_normalizador.py`
 
 ---
@@ -203,7 +203,7 @@ PARA asegurar que solo se procesan solicitudes correctas
 - DADO un registro con monto -500 CUANDO se valida R3 ENTONCES falla con motivo "monto fuera de rango"
 - DADO un registro que falla multiples reglas CUANDO se valida ENTONCES se registran TODOS los motivos
 
-**Componente**: `src/validador.py`
+**Componente**: `legacy_system/src/validador.py`
 **Test**: `tests/test_validador.py`
 
 ---
@@ -232,7 +232,7 @@ PARA evaluar la calidad de las solicitudes recibidas
 - DADO un lote con fallas en R2 CUANDO se genera el reporte ENTONCES el detalle de R2 incluye cantidad, % sobre invalidos, % sobre total y ejemplos
 - DADO un lote procesado CUANDO se genera el reporte ENTONCES se guarda como archivo JSON en data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/reporte_calidad.json
 
-**Componente**: `src/calidad.py`
+**Componente**: `legacy_system/src/calidad.py`
 **Test**: `tests/test_calidad.py`
 
 ---
@@ -253,11 +253,11 @@ PARA evaluar la calidad de las solicitudes recibidas
 8. Registra resumen final (tiempo total, totales procesados)
 
 **Modos de seleccion de archivo**:
-- `python src/main.py ruta/al/archivo` — por argumento de linea de comandos
-- `python src/main.py` — menu interactivo que lista archivos disponibles en `data/`
-- `main(archivo_entrada_param="ruta")` — parametro directo (uso en tests)
+- `python legacy_system/src/main.py ruta/al/archivo` - por argumento de linea de comandos
+- `python legacy_system/src/main.py` - menu interactivo que lista archivos disponibles en `data/`
+- `main(archivo_entrada_param="ruta")` - parametro directo (uso en tests)
 
-**Componente**: `src/main.py`
+**Componente**: `legacy_system/src/main.py`
 
 ---
 
@@ -284,7 +284,7 @@ PARA evaluar la calidad de las solicitudes recibidas
 | Archivo no encontrado | ERROR | "Archivo no encontrado: datos/entrada.csv" |
 | Resumen final | INFO | "Workflow completado en 0.45s - 15 procesados, 9 validos, 6 invalidos" |
 
-**Componente**: `src/logger.py`
+**Componente**: `legacy_system/src/logger.py`
 
 #### RNF-02: Rendimiento
 
@@ -347,33 +347,34 @@ WORKFLOW PRINCIPAL (main.py)
 
 ### 5.2 Estructura de Carpetas
 
-```
+```text
 challenge/
-├── CLAUDE.md
-├── AGENTS.md
-├── src/                    # Codigo fuente (1 modulo por responsabilidad)
-│   ├── ingesta.py           # RF-01
-│   ├── normalizador.py      # RF-02
-│   ├── validador.py         # RF-03
-│   ├── calidad.py           # RF-04
-│   ├── logger.py            # RNF-01
-│   └── main.py              # RF-05 (orquestador)
-├── data/                   # Datos de entrada y salida
-│   ├── solicitudes.csv      # Entrada de ejemplo (CSV)
-│   ├── solicitudes.json     # Entrada de ejemplo (JSON)
-│   ├── solicitudes.txt      # Entrada de ejemplo (TXT pipe-delimited)
-│   └── ejecuciones/         # Salidas versionadas por ejecucion
-│       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
-│           ├── solicitudes_limpias.csv
-│           ├── reporte_calidad.json
-│           └── workflow.log
-├── docs/                   # Documentacion
-│   ├── challenge_tecnico.md
-│   ├── diseno_resumido.md
-│   ├── diseno_srs.md
-│   └── registro_decisiones.md
-├── tests/                  # Tests unitarios
-└── README.md               # Instrucciones de ejecucion
+|- CLAUDE.md
+|- AGENTS.md
+|- legacy_system/
+|  `- src/                    # Codigo fuente baseline (1 modulo por responsabilidad)
+|     |- ingesta.py           # RF-01
+|     |- normalizador.py      # RF-02
+|     |- validador.py         # RF-03
+|     |- calidad.py           # RF-04
+|     |- logger.py            # RNF-01
+|     `- main.py              # RF-05 (orquestador)
+|- data/                      # Datos de entrada y salida
+|  |- solicitudes.csv         # Entrada de ejemplo (CSV)
+|  |- solicitudes.json        # Entrada de ejemplo (JSON)
+|  |- solicitudes.txt         # Entrada de ejemplo (TXT pipe-delimited)
+|  `- ejecuciones/            # Salidas versionadas por ejecucion
+|     `- ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+|        |- solicitudes_limpias.csv
+|        |- reporte_calidad.json
+|        `- workflow.log
+|- docs/                      # Documentacion
+|  |- challenge_tecnico.md
+|  |- diseno_resumido.md
+|  |- diseno_srs.md
+|  `- registro_decisiones.md
+|- tests/                     # Tests unitarios
+`- README.md                  # Instrucciones de ejecucion
 ```
 
 **Nota de version 1.5**: las salidas de ejecucion ya no se escriben en la raiz de `data/`.  
@@ -442,12 +443,12 @@ En una code review se revisaria:
 
 | ID | Requerimiento | Componente | Funcion Principal | Test | Estado |
 |----|---------------|------------|-------------------|------|--------|
-| RF-01 | Ingesta de archivos (CSV/JSON/TXT) | src/ingesta.py | leer_solicitudes() | tests/test_ingesta.py (9/9) | Completo |
-| RF-02 | Normalizacion de campos | src/normalizador.py | normalizar_registros() | tests/test_normalizador.py (6/6) | Completo |
-| RF-03 | Validacion de elegibilidad | src/validador.py | validar_registros() | tests/test_validador.py (12/12) | Completo |
-| RF-04 | Control de calidad | src/calidad.py | generar_reporte() | tests/test_calidad.py (3/3) | Completo |
-| RF-05 | Orquestacion workflow | src/main.py | main() | tests/test_main.py (6/6) | Completo |
-| RNF-01 | Logging y trazabilidad | src/logger.py | registrar() | Verificado en logs generados | Completo |
+| RF-01 | Ingesta de archivos (CSV/JSON/TXT) | legacy_system/src/ingesta.py | leer_solicitudes() | tests/test_ingesta.py (9/9) | Completo |
+| RF-02 | Normalizacion de campos | legacy_system/src/normalizador.py | normalizar_registros() | tests/test_normalizador.py (6/6) | Completo |
+| RF-03 | Validacion de elegibilidad | legacy_system/src/validador.py | validar_registros() | tests/test_validador.py (12/12) | Completo |
+| RF-04 | Control de calidad | legacy_system/src/calidad.py | generar_reporte() | tests/test_calidad.py (3/3) | Completo |
+| RF-05 | Orquestacion workflow | legacy_system/src/main.py | main() | tests/test_main.py (6/6) | Completo |
+| RNF-01 | Logging y trazabilidad | legacy_system/src/logger.py | registrar() | Verificado en logs generados | Completo |
 | RNF-02 | Rendimiento (<5s/1000 reg) | (todos) | - | 0.01s para 15 registros | Completo |
 | RNF-03 | Mantenibilidad | (todos) | - | Modulos independientes, snake_case | Completo |
 

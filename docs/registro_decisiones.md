@@ -160,7 +160,7 @@ generando una inconsistencia.
 **Contexto**: Python tiene un modulo `logging` en la stdlib. El proyecto implementa
 su propio logger con funciones `info()`, `warn()`, `error()`.
 
-**Decision**: Usar logger propio (`src/logger.py`) con funciones simples que escriben
+**Decision**: Usar logger propio (`legacy_system/src/logger.py`) con funciones simples que escriben
 a archivo y a consola.
 
 **Justificacion**:
@@ -234,7 +234,7 @@ detectando el formato automaticamente por la extension del archivo.
 Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que archivo procesar.
 
 **Decision**: Implementar doble mecanismo de seleccion:
-1. **Argumento CLI**: `python src/main.py data/solicitudes.json` — el archivo se pasa como `sys.argv[1]`
+1. **Argumento CLI**: `python legacy_system/src/main.py data/solicitudes.json` - el archivo se pasa como `sys.argv[1]`
 2. **Menu interactivo**: si no se pasa argumento, se listan los archivos `.csv`, `.json`, `.txt`
    disponibles en `data/` y el operador elige por numero
 
@@ -247,6 +247,138 @@ Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que arc
 **Alternativas descartadas**:
 - Solo argumento CLI sin menu: poco amigable para operadores que no conocen las rutas
 - Argparse: agrega complejidad innecesaria para un solo parametro opcional
+
+---
+
+## DEC-12: Arquitectura dual `legacy_system` + `ai_first_system`
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: El challenge evoluciono de un flujo unico a una plataforma comparativa con baseline estable y pista AI.
+
+**Decision**: Separar implementacion en dos sistemas explicitos:
+- `legacy_system/src/` para baseline deterministico
+- `ai_first_system/src/` para flujo hibrido con LLM real
+
+**Justificacion**:
+- Facilita comparacion tecnica y de negocio (tiempo, calidad, costo)
+- Aisla regresiones: cambios en AI-First no rompen baseline legacy
+- Mejora trazabilidad de requerimientos por modulo y por suite de tests
+
+---
+
+## DEC-13: Politica de LLM real obligatoria (sin mocks)
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: Habia riesgo de validar AI-First con dobles de prueba en lugar de llamadas reales al provider.
+
+**Decision**:
+- Prohibir mocks/stubs/fakes de LLM en capas de runtime y pruebas de contrato/integracion.
+- Mantener `gemini` como provider por defecto.
+- Bloquear `MODO_MOCK` en ejecucion real.
+
+**Justificacion**:
+- Evita falsos positivos en calidad y enrutamiento
+- Garantiza que benchmark y contrato midan comportamiento real
+- Alinea evaluacion tecnica con el objetivo del challenge (AI aplicada en condiciones reales)
+
+---
+
+## DEC-14: `.env.local` como fuente obligatoria de configuracion Gemini
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: La configuracion de LLM podia quedar incompleta o dispersa, generando fallas silenciosas.
+
+**Decision**:
+- Validar obligatoriamente en AI-First la presencia de:
+  - `GEMINI_API_KEY`
+  - `GEMINI_GEMMA_MODEL`
+  - `GEMINI_EMBEDDING_MODEL`
+- Si falta algo, abortar con mensaje claro sin fallback.
+
+**Justificacion**:
+- Reduce errores operativos y estados ambiguos
+- Hace reproducible la ejecucion AI-First
+- Mantiene una sola fuente de verdad de configuracion
+
+---
+
+## DEC-15: Contrato AI-First con casos ambiguos forzando `llm_path`
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: Un test de contrato podia pasar sin validar realmente el camino LLM ni las llamadas al provider.
+
+**Decision**:
+- Incorporar casos ambiguos controlados en contrato.
+- Exigir asserts explicitos:
+  - `stats["llm_path"] > 0`
+  - incremento de metricas reales del provider (`total_llamadas` o equivalente)
+
+**Justificacion**:
+- Garantiza cobertura del camino hibrido completo
+- Evita contratos que validan solo forma de salida sin ejecutar LLM real
+
+---
+
+## DEC-16: Metricas LLM sin subreporte silencioso
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: Se observaron corridas con `llm_calls_totales > 0` y tokens/costo en `0`, lo que subreportaba uso real.
+
+**Decision**:
+- Introducir estados explicitos de disponibilidad:
+  - `token_usage_estado`: `sin_llamadas`, `completo`, `parcial`, `sin_datos`
+  - `costo_estimado_estado`: `sin_llamadas`, `completo`, `parcial`, `no_disponible`
+- Publicar `llm_tokens_prompt`, `llm_tokens_completion`, `llm_costo_estimado_usd` como `None`
+  cuando no hay usage metadata confiable.
+
+**Justificacion**:
+- Evita confundir "dato no disponible" con "valor real cero"
+- Mejora lectura de benchmarks para toma de decision
+
+---
+
+## DEC-17: Compatibilidad de usage metadata entre SDK Gemini nuevo y legacy
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: Distintas versiones/SDKs de Gemini exponen usage con estructuras y nombres de campos diferentes.
+
+**Decision**:
+- Implementar extraccion robusta de tokens en `gemini_adapter.py` para:
+  - `google.genai` (SDK nuevo)
+  - `google-generativeai` (SDK legacy)
+- Incluir fallback controlado de SDK nuevo a legacy en runtime.
+
+**Justificacion**:
+- Mantiene continuidad operativa ante diferencias de SDK
+- Reduce perdidas de telemetria de tokens/costo
+
+---
+
+## DEC-18: Higiene estructural del repo y artefactos efimeros
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: El repositorio acumulaba artefactos efimeros (ejecuciones, caches, carpetas temporales) que degradaban legibilidad.
+
+**Decision**:
+- Consolidar estructura canonicamente en:
+  - `legacy_system/`
+  - `ai_first_system/`
+  - `metrics/`
+  - `docs/`
+  - `tests/`
+- Ignorar artefactos de ejecucion/caches en `.gitignore` y conservar carpetas con `.gitkeep`.
+
+**Justificacion**:
+- Reduce ruido de versionado
+- Facilita auditoria de codigo y documentacion
+- Alinea estructura real con README/SRS
 
 ---
 
@@ -265,3 +397,10 @@ Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que arc
 | DEC-09 | Artefactos por ejecucion | Alta | main.py, logger.py, docs/, tests/ |
 | DEC-10 | Soporte multi-formato CSV/JSON/TXT | Alta | ingesta.py, docs/, tests/ |
 | DEC-11 | Seleccion archivo CLI o menu interactivo | Media | main.py, docs/ |
+| DEC-12 | Arquitectura dual legacy + ai_first | Alta | legacy_system/, ai_first_system/, main.py |
+| DEC-13 | Politica LLM real sin mocks | Alta | ai_first_system/, tests/contract/, tests/integration/ |
+| DEC-14 | `.env.local` obligatorio para Gemini | Alta | ai_first_system/src/config.py, run_ai_first.py |
+| DEC-15 | Contrato con `llm_path` y llamadas reales | Alta | tests/contract/test_contract.py |
+| DEC-16 | Metricas LLM sin subreporte silencioso | Alta | ai_first_system/src/adapters/llm_provider.py, metrics/metricas.py |
+| DEC-17 | Compatibilidad usage SDK nuevo/legacy | Media | ai_first_system/src/adapters/gemini_adapter.py |
+| DEC-18 | Higiene estructural y artefactos efimeros | Media | .gitignore, data/, metrics/reports/, tests/ejecuciones/ |

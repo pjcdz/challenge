@@ -5,9 +5,14 @@ import sys
 import os
 import json
 
-# Agregar src al path
+# Agregar legacy_system/src al path
 sys.path.insert(
-    0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "src")
+    0,
+    os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+        "legacy_system",
+        "src",
+    ),
 )
 
 import logger

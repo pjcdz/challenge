@@ -8,3 +8,20 @@ __pycache__/
 .mypy_cache/
 .ruff_cache/
 .cache/
+.venv/
+
+# Configuracion local sensible
+.env.local
+
+# Salidas de ejecucion (mantener carpetas vacias con .gitkeep)
+data/ejecuciones/*
+!data/ejecuciones/.gitkeep
+metrics/reports/*
+!metrics/reports/.gitkeep
+legacy_system/data/ejecuciones/*
+!legacy_system/data/ejecuciones/.gitkeep
+legacy_system/tests/ejecuciones/*
+!legacy_system/tests/ejecuciones/.gitkeep
+tests/ejecuciones/*
+!tests/ejecuciones/.gitkeep
+tests/tmp_review/

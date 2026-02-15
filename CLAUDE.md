@@ -84,30 +84,57 @@ Retorna: Contexto combinado de Python style + Requirements Engineering
 
 ```text
 challenge/
-├── CLAUDE.md          # Este archivo - instrucciones IA
-├── AGENTS.md          # Knowledge base expandida
-├── src/               # Codigo fuente
-│   ├── ingesta.py      # RF-01: Lectura de archivos de solicitudes
-│   ├── normalizador.py # RF-02: Normalizacion de campos
-│   ├── validador.py    # RF-03: Validacion de reglas de elegibilidad
-│   ├── calidad.py      # RF-04: Control de calidad y reporte
-│   ├── logger.py       # RNF-01: Sistema de logging
-│   └── main.py         # Orquestador del workflow
-├── docs/              # Documentacion (SRS, resumen y decisiones)
-│   ├── challenge_tecnico.md  # Enunciado original del challenge
-│   ├── diseno_resumido.md    # Diseno resumido (Etapa 1)
-│   ├── diseno_srs.md         # Documento de diseno SRS
-│   └── registro_decisiones.md
-├── tests/             # Tests
-├── data/              # Datos de entrada y salidas por corrida
-│   ├── solicitudes.csv
-│   └── ejecuciones/
-│       └── ejecucion_YYYYMMDD_HHMMSS_<archivo>/
-│           ├── solicitudes_limpias.csv
-│           ├── reporte_calidad.json
-│           └── workflow.log
-└── README.md
+|- CLAUDE.md
+|- AGENTS.md
+|- main.py
+|- requirements.txt
+|- pytest.ini
+|- legacy_system/
+|  `- src/           # Baseline deterministico (RF-01..RF-05)
+|- ai_first_system/
+|  `- src/           # Flujo hibrido con Gemini real
+|- metrics/
+|  |- benchmark_runner.py
+|  |- data_generator.py
+|  |- metricas.py
+|  |- datasets/
+|  `- reports/
+|- docs/             # Documentacion (SRS, resumen y decisiones)
+|  |- challenge_tecnico.md
+|  |- diseno_resumido.md
+|  |- diseno_srs.md
+|  |- diseno_srs_ai_first.md
+|  `- registro_decisiones.md
+|- tests/            # legacy, ai_first, contract, integration, metrics
+|- data/
+|  |- solicitudes.csv
+|  `- ejecuciones/
+|     `- ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+|        |- solicitudes_limpias.csv
+|        |- reporte_calidad.json
+|        `- workflow.log
+`- README.md
 ```
+
+## Politica AI-First (Obligatoria)
+
+- Provider por defecto y unico soportado en runtime: `gemini`.
+- No usar mocks/stubs/fakes de LLM en ejecucion real.
+- Configuracion obligatoria desde `.env.local`:
+  - `GEMINI_API_KEY`
+  - `GEMINI_GEMMA_MODEL`
+  - `GEMINI_EMBEDDING_MODEL`
+- Si falta configuracion, AI-First debe fallar con mensaje claro (sin fallback mock).
+
+## Tests y Metricas Reales
+
+- `tests/contract/test_contract.py` debe validar casos ambiguos reales:
+  - `stats["llm_path"] > 0`
+  - incremento de llamadas reales del provider (`total_llamadas` o equivalente)
+- `tests/integration/test_real_llm.py` valida provider Gemini real desde `.env.local`.
+- Benchmark (`metrics/benchmark_runner.py` + `metrics/metricas.py`) debe evitar subreporte:
+  - cuando no hay usage metadata, publicar tokens/costo como `NO_DISPONIBLE` (`null` en JSON)
+  - reportar estados de disponibilidad (`completo`, `parcial`, `sin_datos`, `no_disponible`)
 
 ## Criterios de Evaluacion del Challenge (CUMPLIR TODOS)
 
@@ -160,4 +187,5 @@ El diseno DEBE seguir:
 - Checklist de validacion de requerimientos
 
 **Aplicar TODO el conocimiento de ingenieria de requerimientos del usuario.**
+
 
