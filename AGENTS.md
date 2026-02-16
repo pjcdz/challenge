@@ -365,6 +365,55 @@ Para mantener concordancia con `README.md`, `CLAUDE.md` y `docs/diseno_srs.md`:
   - si hay llamadas LLM reales sin usage metadata, tokens/costo se reportan como `NO_DISPONIBLE` (`null` en JSON)
   - usar estados explicitos: `sin_llamadas`, `completo`, `parcial`, `sin_datos`, `no_disponible`
 
+## 3.10 Refactor AI-First de Performance (Estado Actual)
+
+### Clasificacion obligatoria previa al LLM
+
+- Todo registro debe clasificarse en:
+  - `VALIDO_DIRECTO`
+  - `INVALIDO_DIRECTO`
+  - `AMBIGUO_REQUIERE_IA`
+- Solo `AMBIGUO_REQUIERE_IA` se envia al LLM.
+- Trazabilidad por registro obligatoria:
+  - motivo de clasificacion
+  - regla afectada
+  - ronda/batch si paso por IA
+
+### Criterios de ambiguo
+
+- Fecha en lenguaje natural no deterministica (ej: `15 marzo 2025`)
+- Campo parcialmente interpretable fuera de regex estricto
+- Valor que requiere inferencia semantica real
+
+### Criterios deterministas (sin LLM)
+
+- Fechas no canonicas resolubles por reglas:
+  - `15 de marzo del 2025`
+  - `Mar 15, 2025`
+  - `2025/03/15`
+  - `15.03.2025`
+- Fechas incompletas (`marzo 2025`, `Q1 2025`, `primer trimestre`) -> invalido directo R2
+- Monedas directas no soportadas (`GBP`, `MONEDA LOCAL`, `DIVISA EXTRANJERA`) -> invalido directo R2
+
+### Batching paralelo por rondas
+
+- Payload minimo por ambiguo (`id_solicitud` + campos necesarios + reglas)
+- Lotes por `batch_size` + tope de tokens estimados
+- Ejecucion concurrente con `max_workers`
+- Rondas de pendientes con timeout/retry/backoff
+- Al agotar rondas: fallback tecnico explicito
+
+### Parametros tunables en `.env.local` (opcionales)
+
+- `AI_FIRST_TIMEOUT_LLM_SEGUNDOS`
+- `AI_FIRST_BATCH_SIZE`
+- `AI_FIRST_BATCH_MAX_TOKENS`
+- `AI_FIRST_BATCH_MAX_WORKERS`
+- `AI_FIRST_BATCH_TIMEOUT_SEGUNDOS`
+- `AI_FIRST_BATCH_MAX_RONDAS`
+- `AI_FIRST_BATCH_RETRIES`
+- `AI_FIRST_BATCH_BACKOFF_SEGUNDOS`
+
 ---
 
 # REFERENCIA RAPIDA: MCP Tools

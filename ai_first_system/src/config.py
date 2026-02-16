@@ -32,6 +32,30 @@ def obtener_variable(nombre, valor_defecto=None):
     return val
 
 
+def obtener_entero_env_local(clave, valor_defecto):
+    # Obtiene entero desde .env.local con fallback
+    if clave not in ENV_LOCAL_VALORES.keys():
+        return valor_defecto
+    txt = ENV_LOCAL_VALORES[clave]
+    try:
+        n = int(txt)
+        return n
+    except Exception:
+        return valor_defecto
+
+
+def obtener_float_env_local(clave, valor_defecto):
+    # Obtiene float desde .env.local con fallback
+    if clave not in ENV_LOCAL_VALORES.keys():
+        return valor_defecto
+    txt = ENV_LOCAL_VALORES[clave]
+    try:
+        n = float(txt)
+        return n
+    except Exception:
+        return valor_defecto
+
+
 def leer_env_local():
     # Lee .env.local manualmente para garantizar fuente de verdad obligatoria
     # Retorna diccionario simple clave->valor
@@ -74,8 +98,48 @@ GEMINI_GEMMA_MODEL = ENV_LOCAL_VALORES.get("GEMINI_GEMMA_MODEL", "")
 GEMINI_EMBEDDING_MODEL = ENV_LOCAL_VALORES.get("GEMINI_EMBEDDING_MODEL", "")
 
 # --- Configuracion de retries y timeouts ---
-MAX_RETRIES_LLM = 2
-TIMEOUT_LLM_SEGUNDOS = 30
+MAX_RETRIES_LLM = obtener_entero_env_local("AI_FIRST_MAX_RETRIES_LLM", 2)
+if MAX_RETRIES_LLM < 1:
+    MAX_RETRIES_LLM = 1
+
+TIMEOUT_LLM_SEGUNDOS = obtener_entero_env_local("AI_FIRST_TIMEOUT_LLM_SEGUNDOS", 30)
+if TIMEOUT_LLM_SEGUNDOS < 1:
+    TIMEOUT_LLM_SEGUNDOS = 10
+
+# --- Configuracion de batching paralelo para ambiguos ---
+BATCH_TAMANO = obtener_entero_env_local("AI_FIRST_BATCH_SIZE", 25)
+if BATCH_TAMANO < 1:
+    BATCH_TAMANO = 25
+
+BATCH_MAX_TOKENS_ESTIMADOS = obtener_entero_env_local(
+    "AI_FIRST_BATCH_MAX_TOKENS", 12000
+)
+if BATCH_MAX_TOKENS_ESTIMADOS < 2000:
+    BATCH_MAX_TOKENS_ESTIMADOS = 2000
+
+BATCH_MAX_WORKERS = obtener_entero_env_local("AI_FIRST_BATCH_MAX_WORKERS", 4)
+if BATCH_MAX_WORKERS < 1:
+    BATCH_MAX_WORKERS = 1
+
+BATCH_TIMEOUT_SEGUNDOS = obtener_entero_env_local("AI_FIRST_BATCH_TIMEOUT_SEGUNDOS", 45)
+if BATCH_TIMEOUT_SEGUNDOS < 5:
+    BATCH_TIMEOUT_SEGUNDOS = 45
+
+BATCH_MAX_RONDAS = obtener_entero_env_local("AI_FIRST_BATCH_MAX_RONDAS", 3)
+if BATCH_MAX_RONDAS < 1:
+    BATCH_MAX_RONDAS = 3
+
+BATCH_REINTENTOS_POR_BATCH = obtener_entero_env_local(
+    "AI_FIRST_BATCH_RETRIES", 1
+)
+if BATCH_REINTENTOS_POR_BATCH < 1:
+    BATCH_REINTENTOS_POR_BATCH = 1
+if BATCH_REINTENTOS_POR_BATCH > 2:
+    BATCH_REINTENTOS_POR_BATCH = 2
+
+BATCH_BACKOFF_SEGUNDOS = obtener_float_env_local("AI_FIRST_BATCH_BACKOFF_SEGUNDOS", 0.6)
+if BATCH_BACKOFF_SEGUNDOS < 0.0:
+    BATCH_BACKOFF_SEGUNDOS = 0.0
 
 # --- Bandera de modo mock (forzada en False por politica de ejecucion real) ---
 MODO_MOCK = False
@@ -165,6 +229,8 @@ SINONIMOS_PAIS = {
     "uk": "Reino Unido",
     "us": "Estados Unidos",
     "usa": "Estados Unidos",
+    "republica argentina": "Argentina",
+    "estados unidos mexicanos": "Mexico",
 }
 
 
@@ -218,5 +284,12 @@ def obtener_info_config():
         "modo_mock": MODO_MOCK,
         "max_retries": MAX_RETRIES_LLM,
         "timeout_segundos": TIMEOUT_LLM_SEGUNDOS,
+        "batch_size": BATCH_TAMANO,
+        "batch_max_tokens_estimados": BATCH_MAX_TOKENS_ESTIMADOS,
+        "batch_max_workers": BATCH_MAX_WORKERS,
+        "batch_timeout_segundos": BATCH_TIMEOUT_SEGUNDOS,
+        "batch_max_rondas": BATCH_MAX_RONDAS,
+        "batch_reintentos_por_batch": BATCH_REINTENTOS_POR_BATCH,
+        "batch_backoff_segundos": BATCH_BACKOFF_SEGUNDOS,
     }
     return info

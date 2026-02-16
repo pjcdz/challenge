@@ -466,7 +466,7 @@ def test_clasificar_registro_ambiguo():
         "tipo_producto": "cta especial",
         "id_cliente": "CLI-100",
         "monto_o_limite": "50k",
-        "moneda": "moneda local",
+        "moneda": "u.s. dollar",
         "pais": "republica oriental",
     }
 
@@ -542,11 +542,11 @@ def test_enrutar_registros():
         # Ambiguo - llm_path
         {
             "id_solicitud": "SOL-002",
-            "fecha_solicitud": "marzo 2025",
+            "fecha_solicitud": "15 marzo 2025",
             "tipo_producto": "producto raro",
             "id_cliente": "CLI-200",
             "monto_o_limite": "50k",
-            "moneda": "moneda local",
+            "moneda": "u.s. dollar",
             "pais": "pais lejano",
         },
         # Sinonimo - regla_path
@@ -618,15 +618,11 @@ def test_enrutar_registros_vacio():
     assert ok
 
 
-def test_clasificar_registro_evalua_moneda_por_embedding_real():
+def test_clasificar_registro_no_usa_embeddings_runtime():
     # DADO una moneda no canonica ni sinonimo
-    # CUANDO se clasifica con provider real Gemini
-    # ENTONCES ejecuta embeddings y retorna una clasificacion valida
-    print("TEST: test_clasificar_registro_evalua_moneda_por_embedding_real")
-
-    provider = obtener_provider_real()
-    metricas_antes = provider.obtener_metricas()
-    emb_antes = metricas_antes.get("total_embedding_calls", 0)
+    # CUANDO se clasifica en AI-First
+    # ENTONCES se marca ambiguo sin usar embeddings en runtime
+    print("TEST: test_clasificar_registro_no_usa_embeddings_runtime")
 
     reg = {
         "id_solicitud": "SOL-EMB-01",
@@ -638,25 +634,17 @@ def test_clasificar_registro_evalua_moneda_por_embedding_real():
         "pais": "Argentina",
     }
 
-    resultado = router_ambiguedad.clasificar_registro(reg, provider, {})
-    metricas_despues = provider.obtener_metricas()
-    emb_despues = metricas_despues.get("total_embedding_calls", 0)
+    resultado = router_ambiguedad.clasificar_registro(reg, None, None)
 
     ok = True
     if resultado == None:
         print("  FALLO: resultado no deberia ser None")
         ok = False
-    elif "es_ambiguo" not in resultado.keys():
-        print("  FALLO: resultado deberia incluir es_ambiguo")
+    elif resultado.get("clasificacion", "") != "AMBIGUO_REQUIERE_IA":
+        print("  FALLO: deberia clasificar como AMBIGUO_REQUIERE_IA")
         ok = False
-    elif emb_despues <= emb_antes:
-        print("  FALLO: deberia haber al menos una llamada real a embeddings")
-        ok = False
-    elif (
-        "moneda" not in resultado["resolucion_sinonimos"].keys()
-        and "moneda" not in resultado["campos_ambiguos"]
-    ):
-        print("  FALLO: la moneda deberia quedar resuelta o marcada como ambigua")
+    elif "moneda" not in resultado.get("campos_ambiguos", []):
+        print("  FALLO: moneda deberia estar en campos ambiguos")
         ok = False
 
     if ok:
@@ -693,7 +681,7 @@ if __name__ == "__main__":
         test_clasificar_registro_sinonimo_resuelto,
         test_enrutar_registros,
         test_enrutar_registros_vacio,
-        test_clasificar_registro_evalua_moneda_por_embedding_real,
+        test_clasificar_registro_no_usa_embeddings_runtime,
     ]
 
     aprobados = 0

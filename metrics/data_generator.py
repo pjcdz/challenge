@@ -1,6 +1,6 @@
 # data_generator.py - Generador de datos sinteticos para benchmark (RF-06 AI-First)
 # Genera datasets con registros limpios, sucios y ambiguos + ground truth
-# Parametros: --cantidad, --seed, --ratio-limpio, --ratio-sucio, --ratio-ambiguo, --formato
+# Parametros: --cantidad, --seed, --ratio-limpio, --ratio-sucio, --ratio-ambiguo, --formato, --perfil
 
 import os
 import sys
@@ -111,6 +111,76 @@ FECHAS_AMBIGUAS = [
 
 # Montos invalidos para registros que deben fallar R3
 MONTOS_INVALIDOS = ["-500", "0", "1000000000", "-1", "99999999999"]
+
+# Variantes ambiguas realistas (deberian requerir IA semantica)
+TIPOS_AMBIGUOS_REALISTAS = [
+    "cuenta sueldo",
+    "tarjeta gold",
+    "servicio hogar",
+    "prestamo nomina",
+    "seguro vida",
+    "producto premium",
+]
+
+MONEDAS_AMBIGUAS_REALISTAS = [
+    "u$s",
+    "usd oficial",
+    "dolar blue",
+    "euros billete",
+    "pesos arg",
+]
+
+PAISES_AMBIGUOS_REALISTAS = [
+    "rep argentina",
+    "mexico df",
+    "brasilia brasil",
+    "republica del paraguay",
+    "santiago chile",
+]
+
+FECHAS_AMBIGUAS_REALISTAS = [
+    "5 marzo 2026",
+    "11 abril 2025",
+    "2 julio 2025",
+    "8 octubre 2025",
+    "17 diciembre 2025",
+]
+
+MONTOS_AMBIGUOS_REALISTAS = [
+    "50 mil",
+    "$25000",
+    "1.2 millones",
+    "usd 1200",
+    "20k",
+]
+
+
+def obtener_catalogos_ambiguos(perfil):
+    # Retorna catalogos de datos ambiguos segun perfil de benchmark
+    # perfil soportado: base, realista
+    p = "base"
+    if perfil != None:
+        p = str(perfil).strip().lower()
+
+    d = {}
+    if p == "realista":
+        d["tipos"] = TIPOS_AMBIGUOS_REALISTAS
+        d["monedas"] = MONEDAS_AMBIGUAS_REALISTAS
+        d["paises"] = PAISES_AMBIGUOS_REALISTAS
+        d["fechas"] = FECHAS_AMBIGUAS_REALISTAS
+        d["montos"] = MONTOS_AMBIGUOS_REALISTAS
+        d["usar_monto_semantico"] = True
+        d["perfil"] = "realista"
+    else:
+        d["tipos"] = TIPOS_AMBIGUOS
+        d["monedas"] = MONEDAS_AMBIGUAS
+        d["paises"] = PAISES_AMBIGUOS
+        d["fechas"] = FECHAS_AMBIGUAS
+        d["montos"] = []
+        d["usar_monto_semantico"] = False
+        d["perfil"] = "base"
+
+    return d
 
 
 def generar_id_solicitud(numero):
@@ -248,9 +318,17 @@ def generar_registro_sucio(num_sol, num_cli):
     return reg, gt
 
 
-def generar_registro_ambiguo(num_sol, num_cli):
+def generar_registro_ambiguo(num_sol, num_cli, perfil="base"):
     # Genera un registro con datos ambiguos semanticamente
     # Que NECESITA LLM para resolver (sinonimos, texto libre, etc.)
+    catalogos = obtener_catalogos_ambiguos(perfil)
+    tipos_amb = catalogos["tipos"]
+    monedas_amb = catalogos["monedas"]
+    paises_amb = catalogos["paises"]
+    fechas_amb = catalogos["fechas"]
+    montos_amb = catalogos["montos"]
+    usar_monto_semantico = catalogos["usar_monto_semantico"]
+
     reg = {}
     reg["id_solicitud"] = generar_id_solicitud(num_sol)
 
@@ -267,18 +345,27 @@ def generar_registro_ambiguo(num_sol, num_cli):
     elif opcion == 3:
         campos_para_ambiguar.append("fecha_solicitud")
 
-    # Posibilidad de agregar mas campos ambiguos (30%)
-    if random.randint(1, 10) <= 3:
+    # Posibilidad de agregar mas campos ambiguos (40%)
+    if random.randint(1, 10) <= 4:
         extras = ["tipo_producto", "moneda", "pais", "fecha_solicitud"]
+        if usar_monto_semantico:
+            extras.append("monto_o_limite")
         extra = extras[random.randint(0, 3)]
+        if len(extras) == 5:
+            extra = extras[random.randint(0, 4)]
         if extra not in campos_para_ambiguar:
             campos_para_ambiguar.append(extra)
 
+    # Segunda ambiguedad adicional para perfil realista (25%)
+    if usar_monto_semantico and random.randint(1, 100) <= 25:
+        extras2 = ["tipo_producto", "moneda", "pais", "fecha_solicitud", "monto_o_limite"]
+        extra2 = extras2[random.randint(0, 4)]
+        if extra2 not in campos_para_ambiguar:
+            campos_para_ambiguar.append(extra2)
+
     # Fecha
     if "fecha_solicitud" in campos_para_ambiguar:
-        reg["fecha_solicitud"] = FECHAS_AMBIGUAS[
-            random.randint(0, len(FECHAS_AMBIGUAS) - 1)
-        ]
+        reg["fecha_solicitud"] = fechas_amb[random.randint(0, len(fechas_amb) - 1)]
     else:
         reg["fecha_solicitud"] = FECHAS_LIMPIAS[
             random.randint(0, len(FECHAS_LIMPIAS) - 1)
@@ -287,7 +374,7 @@ def generar_registro_ambiguo(num_sol, num_cli):
     # Tipo producto
     tipo_ambiguo = ""
     if "tipo_producto" in campos_para_ambiguar:
-        tipo_ambiguo = TIPOS_AMBIGUOS[random.randint(0, len(TIPOS_AMBIGUOS) - 1)]
+        tipo_ambiguo = tipos_amb[random.randint(0, len(tipos_amb) - 1)]
         reg["tipo_producto"] = tipo_ambiguo
     else:
         reg["tipo_producto"] = TIPOS_PRODUCTO[
@@ -295,12 +382,18 @@ def generar_registro_ambiguo(num_sol, num_cli):
         ]
 
     reg["id_cliente"] = generar_id_cliente(num_cli)
-    reg["monto_o_limite"] = generar_monto_valido()
+
+    monto_ambiguo = ""
+    if usar_monto_semantico and "monto_o_limite" in campos_para_ambiguar:
+        monto_ambiguo = montos_amb[random.randint(0, len(montos_amb) - 1)]
+        reg["monto_o_limite"] = monto_ambiguo
+    else:
+        reg["monto_o_limite"] = generar_monto_valido()
 
     # Moneda
     moneda_ambigua = ""
     if "moneda" in campos_para_ambiguar:
-        moneda_ambigua = MONEDAS_AMBIGUAS[random.randint(0, len(MONEDAS_AMBIGUAS) - 1)]
+        moneda_ambigua = monedas_amb[random.randint(0, len(monedas_amb) - 1)]
         reg["moneda"] = moneda_ambigua
     else:
         reg["moneda"] = MONEDAS[random.randint(0, len(MONEDAS) - 1)]
@@ -308,7 +401,7 @@ def generar_registro_ambiguo(num_sol, num_cli):
     # Pais
     pais_ambiguo = ""
     if "pais" in campos_para_ambiguar:
-        pais_ambiguo = PAISES_AMBIGUOS[random.randint(0, len(PAISES_AMBIGUOS) - 1)]
+        pais_ambiguo = paises_amb[random.randint(0, len(paises_amb) - 1)]
         reg["pais"] = pais_ambiguo
     else:
         reg["pais"] = PAISES[random.randint(0, len(PAISES) - 1)]
@@ -359,6 +452,16 @@ def generar_registro_ambiguo(num_sol, num_cli):
     else:
         gt["pais_normalizado"] = reg["pais"]
 
+    if "fecha_solicitud" in campos_para_ambiguar:
+        gt["fecha_normalizada"] = "requiere_llm"
+    else:
+        gt["fecha_normalizada"] = reg["fecha_solicitud"]
+
+    if monto_ambiguo != "":
+        gt["monto_normalizado"] = "requiere_llm"
+    else:
+        gt["monto_normalizado"] = reg["monto_o_limite"]
+
     # Estado esperado: si todos los campos ambiguos se resuelven bien, VALIDO
     # Pero como depende del LLM, marcamos como "depende_resolucion"
     hay_requiere_llm = False
@@ -367,6 +470,10 @@ def generar_registro_ambiguo(num_sol, num_cli):
     if gt.get("moneda_normalizada") == "requiere_llm":
         hay_requiere_llm = True
     if gt.get("pais_normalizado") == "requiere_llm":
+        hay_requiere_llm = True
+    if gt.get("fecha_normalizada") == "requiere_llm":
+        hay_requiere_llm = True
+    if gt.get("monto_normalizado") == "requiere_llm":
         hay_requiere_llm = True
 
     if hay_requiere_llm:
@@ -379,7 +486,7 @@ def generar_registro_ambiguo(num_sol, num_cli):
     return reg, gt
 
 
-def generar_dataset(cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo):
+def generar_dataset(cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo, perfil="base"):
     # Genera un dataset sintetico con la distribucion indicada
     # Retorna (registros, ground_truth)
 
@@ -419,7 +526,7 @@ def generar_dataset(cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo):
     # Generar ambiguos
     i = 0
     while i < cant_ambiguo:
-        reg, gt = generar_registro_ambiguo(num_sol, num_cli)
+        reg, gt = generar_registro_ambiguo(num_sol, num_cli, perfil)
         registros.append(reg)
         ground_truth.append(gt)
         num_sol = num_sol + 1
@@ -567,6 +674,7 @@ def generar(
     ratio_sucio=0.3,
     ratio_ambiguo=0.2,
     formato="csv",
+    perfil="base",
 ):
     # Funcion principal del generador
     # Retorna diccionario con rutas de archivos generados
@@ -580,17 +688,30 @@ def generar(
     if formato not in ["csv", "json", "txt"]:
         return {"error": "Formato no soportado: " + formato + ". Usar csv, json o txt"}
 
+    # Validar perfil
+    perfil_txt = str(perfil).strip().lower()
+    if perfil_txt == "":
+        perfil_txt = "base"
+    if perfil_txt not in ["base", "realista"]:
+        return {
+            "error": "Perfil no soportado: "
+            + str(perfil)
+            + ". Usar base o realista"
+        }
+
     # Crear directorio de datasets si no existe
     if not os.path.exists(DIR_DATASETS):
         os.makedirs(DIR_DATASETS)
 
     # Generar dataset
     registros, ground_truth = generar_dataset(
-        cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo
+        cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo, perfil_txt
     )
 
     # Nombre del archivo
     nombre_base = "synth_" + str(cantidad) + "_s" + str(seed)
+    if perfil_txt == "realista":
+        nombre_base = nombre_base + "_realista"
 
     # Exportar dataset
     ruta_dataset = os.path.join(DIR_DATASETS, nombre_base + "." + formato)
@@ -628,6 +749,7 @@ def generar(
         "cantidad_ambiguo": cant_ambiguo,
         "seed": seed,
         "formato": formato,
+        "perfil": perfil_txt,
     }
 
     return resultado
@@ -643,6 +765,7 @@ def main():
     ratio_sucio = 0.3
     ratio_ambiguo = 0.2
     formato = "csv"
+    perfil = "base"
 
     i = 0
     while i < len(args):
@@ -665,6 +788,9 @@ def main():
         elif arg == "--formato" and i + 1 < len(args):
             formato = args[i + 1]
             i = i + 2
+        elif arg == "--perfil" and i + 1 < len(args):
+            perfil = args[i + 1]
+            i = i + 2
         elif arg == "--help" or arg == "-h":
             print("Uso: python data_generator.py [opciones]")
             print("")
@@ -677,9 +803,12 @@ def main():
             print(
                 "  --formato FMT      Formato de salida: csv, json, txt (default: csv)"
             )
+            print("  --perfil PERF      Perfil: base o realista (default: base)")
             print("")
             print("Ejemplo:")
-            print("  python data_generator.py --cantidad 1000 --seed 42 --formato csv")
+            print(
+                "  python data_generator.py --cantidad 1000 --seed 2026 --ratio-limpio 0.65 --ratio-sucio 0.3 --ratio-ambiguo 0.05 --perfil realista --formato csv"
+            )
             return
         else:
             print("Argumento no reconocido: " + arg)
@@ -693,10 +822,11 @@ def main():
     print("  Ratio sucio: " + str(ratio_sucio))
     print("  Ratio ambiguo: " + str(ratio_ambiguo))
     print("  Formato: " + formato)
+    print("  Perfil: " + perfil)
     print("")
 
     resultado = generar(
-        cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo, formato
+        cantidad, seed, ratio_limpio, ratio_sucio, ratio_ambiguo, formato, perfil
     )
 
     if "error" in resultado.keys():
@@ -710,6 +840,7 @@ def main():
     print("  Limpios: " + str(resultado["cantidad_limpio"]))
     print("  Sucios: " + str(resultado["cantidad_sucio"]))
     print("  Ambiguos: " + str(resultado["cantidad_ambiguo"]))
+    print("  Perfil: " + str(resultado.get("perfil", "base")))
 
 
 if __name__ == "__main__":

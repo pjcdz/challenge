@@ -153,6 +153,9 @@ python main.py --modo comparar --input metrics/datasets/synth_1k.csv
 # Generar dataset sintetico
 python main.py --modo generar --cantidad 10000 --seed 42 --formato csv
 
+# Generar dataset realista para benchmark (ambiguos reales controlados)
+python metrics/data_generator.py --cantidad 1000 --seed 2028 --ratio-limpio 0.7 --ratio-sucio 0.295 --ratio-ambiguo 0.005 --perfil realista --formato csv
+
 # Ver todas las opciones
 python main.py --help
 ```
@@ -170,6 +173,8 @@ python main.py --help
 | `--ratio-sucio` | Ratio de registros sucios | 0.3 |
 | `--ratio-ambiguo` | Ratio de registros ambiguos | 0.2 |
 | `--formato` | Formato de salida: csv, json, txt | csv |
+
+Para usar el perfil realista del generador (`base` / `realista`), ejecutar `metrics/data_generator.py` de forma directa con `--perfil`.
 
 ### 3. Salidas de Ejecucion
 
@@ -255,49 +260,27 @@ solicitudes.csv / .json / .txt
 [1] INGESTA BASE -> lee registros, agrega campos de tracking
     |
     v
-[2] ENRUTAMIENTO HIBRIDO
+[2] PRECLASIFICACION DETERMINISTICA (sin LLM)
     |
-    +--> [REGLA PATH] ~80-95% de registros
+    +--> [VALIDO_DIRECTO] -> rule_path
     |     |
-    |     v
-    |  [2a] NORMALIZACION DETERMINISTICA
-    |     |
-    |     v
-    |  [3a] VALIDACION (R1/R2/R3)
-    |     |
-    |     v
-    |  [4a] CONTROL DE CALIDAD
+    +--> [INVALIDO_DIRECTO] -> rule_path
     |
-    +--> [LLM PATH] ~5-20% de registros (ambiguos)
+    +--> [AMBIGUO_REQUIERE_IA] -> llm_path
           |
           v
-       [2b] DETECTOR DE AMBIGUEDAD
-          |
-          v
-       [3b] NORMALIZACION SEMANTICA (LLM)
-          |  - Resuelve sinonimos desconocidos
-          |  - Normaliza fechas textuales
-          |  - Inferencia de categorias
-          |
-          v
-       [4b] GUARDRAILS + RETRY
-          |  - Schema estricto Pydantic
-          |  - Validacion post-LLM
-          |  - Prompt correctivo (max 2 retries)
-          |  - Fallback a INVALIDO si falla
-          |
-          v
-       [5b] VALIDACION DURA (R1/R2/R3)
-          |
-          v
-       [6b] CALIDAD EXPANSIVA
-          |  - Metricas legacy
-          |  - Metricas de enrutamiento
-          |  - Metricas LLM (tokens, costo, retries)
-          |
+       [3] BATCHING PARALELO POR RONDAS
+          - payload minimo por ambiguo
+          - lotes por batch_size + tokens estimados
+          - concurrencia con max_workers
+          - timeout/retry/backoff
+          - fallback tecnico si agota rondas
     |---------------------|
     v
-[7] EXPORTACION COMUN
+[4] NORMALIZACION + VALIDACION + CALIDAD
+    |
+    v
+[5] EXPORTACION COMUN
     |  - CSV con origen_procesamiento (rule_path/llm_path)
     |  - Reporte JSON extendido
     |  - Logs con trazabilidad completa
@@ -335,12 +318,12 @@ v
 
 | Aspecto | Legacy | AI-First |
 |---------|--------|----------|
-| **Algoritmo** | Reglas deterministicas puras | Reglas + LLM para ambiguos |
-| **Velocidad** | Muy rapida (solo local) | Rapida (80-95% por reglas, 5-20% LLM) |
-| **Costo** | Cero (sin LLM) | Bajo (solo para casos ambiguos) |
+| **Algoritmo** | Reglas deterministicas puras | Preclasificacion deterministica + LLM solo para ambiguos reales |
+| **Velocidad** | Muy rapida (solo local) | Objetivo 10-20s/1000 (o menos) con lotes paralelos |
+| **Costo** | Cero (sin LLM) | Variable segun ambiguos enviados |
 | **Robustez** | Datos limpios y sucios resueltos por reglas | Tambien resuelve datos semanticamente ambiguos |
 | **Trazabilidad** | Logs basicos | Logs extendidos + metricas LLM |
-| **Output** | CSV basico | CSV + origen_procesamiento + retries_llm |
+| **Output** | CSV basico | CSV + origen_procesamiento + retries_llm + trazabilidad AI |
 
 **Cuando usar cada modo:**
 
@@ -350,65 +333,104 @@ v
 
 ## Caracteristicas del Modo AI-First
 
-### Enrutamiento Hibrido
-El router clasifica cada registro y decide la ruta:
+### Flujo Optimizado (Deterministico + IA Solo Ambiguos Reales)
 
-- **Rule Path** (80-95% de casos):
-  - Fechas en formato estandar (DD/MM/YYYY, YYYY-MM-DD, DD-MM-YYYY)
-  - Monedas canonicas o sinonimos conocidos (ARS, USD, EUR, pesos, dolares, euros)
-  - Tipos de producto canonicos o sinonimos (CUENTA, TARJETA, SERVICIO, PRESTAMO, SEGURO)
-  - Paises canonicos o sinonimos (Argentina, Brasil, Chile, etc.)
+El router ahora clasifica cada registro en tres estados:
 
-- **LLM Path** (5-20% de casos):
-  - Fechas textuales ("15 de marzo", "Q1 2025")
-  - Monedas o productos desconocidos
-  - Paises en idiomas extranjeros
-  - Campos que requieren inferencia semantica
+- `VALIDO_DIRECTO`: caso deterministico resoluble por reglas (`rule_path`)
+- `INVALIDO_DIRECTO`: falla deterministica de R1/R2/R3 sin necesidad de LLM (`rule_path`)
+- `AMBIGUO_REQUIERE_IA`: ambiguedad real semantica (`llm_path`)
 
-### Guardrails de Salida
+Criterios de ambiguo:
 
-Toda respuesta del LLM pasa por validaciones:
+- Fecha con lenguaje natural no deterministico (por ejemplo `15 marzo 2025`)
+- Campo parcialmente interpretable fuera de formato estricto
+- Valor con posible inferencia semantica contextual
 
-1. **Schema Estricto**: Pydantic model para estructura y tipos
-2. **Validacion de Campo**:
-   - Fecha: DD/MM/YYYY, rango valido
-   - Moneda: ARS, USD, EUR
-   - Tipo Producto: CUENTA, TARJETA, SERVICIO, PRESTAMO, SEGURO
-   - Monto: entero positivo y dentro de rango
-3. **Retry Acotado**: Maximo 2 reintentos con prompt correctivo
-4. **Fallback**: Marca como INVALIDO si falla despues de reintentos
+Criterios deterministas agregados (sin LLM):
+
+- Fechas no canonicas resolubles: `15 de marzo del 2025`, `Mar 15, 2025`, `2025/03/15`, `15.03.2025`
+- Fechas incompletas (`marzo 2025`, `Q1 2025`, `primer trimestre`) pasan a invalido directo R2
+- Monedas directas invalidas (`GBP`, `MONEDA LOCAL`, `DIVISA EXTRANJERA`) pasan a invalido directo R2
+- Sinonimos de pais extendidos (`republica argentina`, `estados unidos mexicanos`)
+
+### Batching Paralelo por Rondas
+
+Solo registros `AMBIGUO_REQUIERE_IA` entran al motor de lotes:
+
+1. Se arma payload minimo por registro (`id_solicitud` + campos necesarios + reglas a validar)
+2. Se empaqueta en lotes por `batch_size` y `batch_max_tokens`
+3. Se ejecutan lotes en paralelo (`max_workers`)
+4. Se guardan resueltos y se reintenta por rondas solo pendientes
+5. Si agotan rondas, se marca fallback tecnico explicito
+
+### Parametros Tunables de Performance
+
+Se configuran en `.env.local` (opcionales, con defaults):
+
+| Variable | Default | Uso |
+|---------|---------|-----|
+| `AI_FIRST_BATCH_SIZE` | `25` | Tamano maximo de lote ambiguo |
+| `AI_FIRST_BATCH_MAX_TOKENS` | `12000` | Presupuesto estimado de tokens por lote |
+| `AI_FIRST_BATCH_MAX_WORKERS` | `4` | Concurrencia de lotes |
+| `AI_FIRST_BATCH_TIMEOUT_SEGUNDOS` | `45` | Timeout maximo de espera por ronda de lotes |
+| `AI_FIRST_BATCH_MAX_RONDAS` | `3` | Reintentos por rondas de pendientes |
+| `AI_FIRST_BATCH_RETRIES` | `1` | Reintentos internos por llamada batch |
+| `AI_FIRST_BATCH_BACKOFF_SEGUNDOS` | `0.6` | Espera entre rondas |
+| `AI_FIRST_TIMEOUT_LLM_SEGUNDOS` | `30` | Timeout de llamada LLM individual |
+
+### SLA y Medicion
+
+SLA objetivo AI-First para benchmark de 1000 registros: **10-20s (o menos)**.
+
+Corrida de evidencia local (domingo 15/02/2026):
+
+- Dataset: `metrics/datasets/synth_1000_s42.csv`
+- Reporte: `metrics/reports/benchmark_20260215_013307.json`
+- Latencia AI-First: **0.26s**
+- `ambiguous_detected`: `0`
+- `ambiguous_sent_llm`: `0`
 
 ### Metricas de Salida
 
-El reporte de calidad AI-First incluye:
+El reporte AI-First ahora incluye:
 
 ```json
 {
   "resumen": { /* metricas legacy */ },
-  "ai_first": {
-    "enrutamiento": {
-      "total_registros": 1000,
-      "rule_path": 850,
-      "llm_path": 150,
-      "porcentaje_llm": 15.0,
-      "total_fallbacks": 3,
-      "total_retries_llm": 12,
-      "sinonimos_resueltos": 42
-    },
-    "llm_provider": {
-      "total_llamadas": 150,
-      "total_llamadas_exitosas": 148,
-      "total_llamadas_con_tokens": 145,
-      "total_llamadas_sin_tokens": 5,
-      "token_usage_disponible": true,
-      "token_usage_estado": "parcial",
-      "total_tokens_prompt": 30000,
-      "total_tokens_completion": 15000,
-      "costo_estimado_usd": 0.00675,
-      "costo_estimado_estado": "parcial",
-      "total_llamadas_fallidas": 2
+    "ai_first": {
+        "enrutamiento": {
+            "total_registros": 1000,
+            "rule_path": 1000,
+            "llm_path": 0,
+            "porcentaje_llm": 0.0,
+            "validos_directos": 781,
+            "invalidos_directos": 219,
+            "ambiguous_detected": 0,
+            "ambiguous_sent_llm": 0,
+            "batches_total": 0,
+            "batch_size_promedio": 0.0,
+            "rounds_total": 0,
+            "total_fallbacks": 0,
+            "total_retries_llm": 0,
+            "sinonimos_resueltos": 390
+        },
+        "performance": {
+            "tiempo_total": 0.26,
+            "tiempo_preclasificacion": 0.0117,
+            "tiempo_llm": 0.0,
+            "tiempo_postproceso": 0.0009
+        },
+        "llm_provider": {
+            "total_llamadas": 0,
+            "total_llamadas_exitosas": 0,
+            "token_usage_estado": "sin_llamadas",
+            "total_tokens_prompt": 0,
+            "total_tokens_completion": 0,
+            "costo_estimado_usd": 0.0,
+            "costo_estimado_estado": "sin_llamadas"
+        }
     }
-  }
 }
 ```
 

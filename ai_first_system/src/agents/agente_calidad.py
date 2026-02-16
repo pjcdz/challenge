@@ -50,16 +50,13 @@ def generar_reporte(
     if total > 0:
         pct_llm = round((total_llm_path * 100.0) / total, 1)
 
-    reporte_ai = {
-        "enrutamiento": {
-            "total_registros": total,
-            "rule_path": total_rule_path,
-            "llm_path": total_llm_path,
-            "porcentaje_llm": pct_llm,
-            "total_fallbacks": total_fallbacks,
-            "total_retries_llm": total_retries,
-        },
-    }
+    reporte_ai = {"enrutamiento": {}}
+    reporte_ai["enrutamiento"]["total_registros"] = total
+    reporte_ai["enrutamiento"]["rule_path"] = total_rule_path
+    reporte_ai["enrutamiento"]["llm_path"] = total_llm_path
+    reporte_ai["enrutamiento"]["porcentaje_llm"] = pct_llm
+    reporte_ai["enrutamiento"]["total_fallbacks"] = total_fallbacks
+    reporte_ai["enrutamiento"]["total_retries_llm"] = total_retries
 
     # Agregar estadisticas del router si estan disponibles
     if stats_router != None:
@@ -69,10 +66,68 @@ def generar_reporte(
         reporte_ai["enrutamiento"]["embeddings_resueltos"] = stats_router.get(
             "embeddings_resueltos", 0
         )
+        reporte_ai["enrutamiento"]["validos_directos"] = stats_router.get(
+            "validos_directos", 0
+        )
+        reporte_ai["enrutamiento"]["invalidos_directos"] = stats_router.get(
+            "invalidos_directos", 0
+        )
+        reporte_ai["enrutamiento"]["ambiguous_detected"] = stats_router.get(
+            "ambiguous_detected", 0
+        )
+        reporte_ai["enrutamiento"]["ambiguous_sent_llm"] = stats_router.get(
+            "ambiguous_sent_llm", 0
+        )
+        reporte_ai["enrutamiento"]["batches_total"] = stats_router.get(
+            "batches_total", 0
+        )
+        reporte_ai["enrutamiento"]["batch_size_promedio"] = stats_router.get(
+            "batch_size_promedio", 0.0
+        )
+        reporte_ai["enrutamiento"]["rounds_total"] = stats_router.get(
+            "rounds_total", 0
+        )
+        reporte_ai["enrutamiento"]["llm_calls_totales"] = stats_router.get(
+            "llm_calls_totales", 0
+        )
+
+        reporte_ai["performance"] = {
+            "tiempo_total": stats_router.get("tiempo_total", 0.0),
+            "tiempo_preclasificacion": stats_router.get(
+                "tiempo_preclasificacion", 0.0
+            ),
+            "tiempo_llm": stats_router.get("tiempo_llm", 0.0),
+            "tiempo_postproceso": stats_router.get("tiempo_postproceso", 0.0),
+        }
 
     # Agregar metricas del LLM provider si estan disponibles
     if metricas_llm != None:
         reporte_ai["llm_provider"] = metricas_llm
+
+    # Trazabilidad por registro
+    trazas = []
+    for reg in registros:
+        traza = {
+            "id_solicitud": reg.get("id_solicitud", ""),
+            "estado_final": reg.get("estado", ""),
+            "origen_procesamiento": reg.get("origen_procesamiento", ""),
+            "retries_llm": reg.get("retries_llm", 0),
+            "fallback_aplicado": reg.get("fallback_aplicado", False),
+        }
+        if "_traza_ai" in reg.keys() and type(reg["_traza_ai"]) == dict:
+            d = reg["_traza_ai"]
+            traza["clasificacion"] = d.get("clasificacion", "")
+            traza["motivo_clasificacion"] = d.get("motivo_clasificacion", "")
+            traza["reglas_afectadas"] = d.get("reglas_afectadas", [])
+            traza["motivos_ambiguedad"] = d.get("motivos_ambiguedad", [])
+            traza["motivos_invalidacion"] = d.get("motivos_invalidacion", [])
+            traza["ronda_llm"] = d.get("ronda_llm", 0)
+            traza["batch_llm"] = d.get("batch_llm", 0)
+            traza["estado_llm"] = d.get("estado_llm", "")
+            traza["motivo_llm"] = d.get("motivo_llm", "")
+        trazas.append(traza)
+
+    reporte_ai["trazabilidad_registros"] = trazas
 
     # Merge con reporte base
     reporte_base["ai_first"] = reporte_ai

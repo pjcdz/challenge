@@ -136,6 +136,42 @@ challenge/
   - cuando no hay usage metadata, publicar tokens/costo como `NO_DISPONIBLE` (`null` en JSON)
   - reportar estados de disponibilidad (`completo`, `parcial`, `sin_datos`, `no_disponible`)
 
+## Refactor AI-First de Performance (Obligatorio)
+
+### Clasificacion previa
+
+- Clasificar cada registro en:
+  - `VALIDO_DIRECTO`
+  - `INVALIDO_DIRECTO`
+  - `AMBIGUO_REQUIERE_IA`
+- Solo `AMBIGUO_REQUIERE_IA` puede ir a LLM.
+- Registrar trazabilidad por registro (motivo, regla, ronda/batch, estado final).
+
+### Criterios de ambiguo
+
+- Fecha semantica no deterministica (ej: `15 marzo 2025`)
+- Campo parcialmente interpretable fuera de regex estricta
+- Valor que requiere inferencia contextual real
+
+### Motor de ambiguos
+
+- Payload minimo por registro ambiguo
+- Batching por tamano y tope de tokens estimados
+- Ejecucion paralela con concurrencia acotada
+- Rondas de pendientes con timeout/retry/backoff
+- Fallback tecnico explicito al agotar rondas
+
+### Tunables via `.env.local` (opcionales)
+
+- `AI_FIRST_TIMEOUT_LLM_SEGUNDOS`
+- `AI_FIRST_BATCH_SIZE`
+- `AI_FIRST_BATCH_MAX_TOKENS`
+- `AI_FIRST_BATCH_MAX_WORKERS`
+- `AI_FIRST_BATCH_TIMEOUT_SEGUNDOS`
+- `AI_FIRST_BATCH_MAX_RONDAS`
+- `AI_FIRST_BATCH_RETRIES`
+- `AI_FIRST_BATCH_BACKOFF_SEGUNDOS`
+
 ## Criterios de Evaluacion del Challenge (CUMPLIR TODOS)
 
 > "Claridad de diseno, estandares, diagramas, calidad de validaciones

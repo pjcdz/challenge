@@ -296,7 +296,7 @@ def test_agente_normalizar_hibrido_usa_workflow_graph():
             "tipo_producto": "producto especial",
             "id_cliente": "CLI-500",
             "monto_o_limite": "50k",
-            "moneda": "moneda local",
+            "moneda": "u.s. dollar",
             "pais": "pais no canonico",
             "flag_prioritario": "S",
             "flag_digital": "N",

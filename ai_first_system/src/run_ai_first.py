@@ -228,6 +228,16 @@ def run(archivo_entrada, provider_nombre="gemini", dir_data=None):
     logger.info(MODULO, "Enrutamiento: " + json.dumps(stats, ensure_ascii=False))
     logger.info(MODULO, "Rule path: " + str(stats["regla_path"]) + " registros")
     logger.info(MODULO, "LLM path: " + str(stats["llm_path"]) + " registros")
+    logger.info(
+        MODULO,
+        "Performance normalizacion -> preclasificacion: "
+        + str(stats.get("tiempo_preclasificacion", 0.0))
+        + "s, llm: "
+        + str(stats.get("tiempo_llm", 0.0))
+        + "s, postproceso: "
+        + str(stats.get("tiempo_postproceso", 0.0))
+        + "s",
+    )
 
     # Paso 4: Validacion dura
     logger.info(MODULO, "--- PASO 3: VALIDACION ---")
@@ -289,6 +299,9 @@ def run(archivo_entrada, provider_nombre="gemini", dir_data=None):
             "total_validos": validos,
             "total_invalidos": invalidos,
             "duracion_segundos": duracion,
+            "tiempo_preclasificacion": stats.get("tiempo_preclasificacion", 0.0),
+            "tiempo_llm": stats.get("tiempo_llm", 0.0),
+            "tiempo_postproceso": stats.get("tiempo_postproceso", 0.0),
         },
         "enrutamiento": stats,
         "metricas_llm": metricas_llm,

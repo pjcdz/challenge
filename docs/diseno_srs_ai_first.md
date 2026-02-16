@@ -176,15 +176,18 @@ PARA tener referencia estable y trazable
 
 ---
 
-#### RF-03: Enrutamiento Hibrido de Ambiguedad
+#### RF-03: Preclasificacion Deterministica de Ambiguedad
 
-**Objetivo SMART**: enrutar al menos el 95% de casos no ambiguos por reglas puras y
-mandar solo casos ambiguos al pipeline LLM.
+**Objetivo SMART**: clasificar 100% de registros en `VALIDO_DIRECTO`, `INVALIDO_DIRECTO`
+o `AMBIGUO_REQUIERE_IA` en menos de 0.1s por 1000 registros y enviar a LLM solo ambiguos reales.
 
 **Descripcion**:
-- Detectar ambiguedad por campo (fecha textual, moneda no canonica, pais libre, etc.)
-- Resolver por reglas cuando el caso sea deterministico
-- Derivar al LLM solo cuando no haya certeza suficiente
+- Ejecutar reglas duras de preclasificacion sin LLM:
+  - `VALIDO_DIRECTO`: resoluble por reglas
+  - `INVALIDO_DIRECTO`: invalido deterministico por R1/R2/R3
+  - `AMBIGUO_REQUIERE_IA`: requiere inferencia semantica real
+- Aplicar resolucion deterministica extendida para fechas no canonicas y sinonimos
+- Derivar a LLM solo `AMBIGUO_REQUIERE_IA`
 
 **Historia de Usuario**:
 ```
@@ -194,25 +197,27 @@ PARA reducir costo, latencia y riesgo de alucinacion
 ```
 
 **Criterios de Aceptacion**:
-- DADO dataset limpio CUANDO corre ai_first ENTONCES el porcentaje de llamadas LLM es bajo
-- DADO dataset ambiguo CUANDO corre ai_first ENTONCES se incrementa uso LLM y mejora normalizacion semantica
+- DADO un registro CUANDO se preclasifica ENTONCES queda trazado con motivo y regla afectada
+- DADO un caso invalido directo CUANDO se procesa ENTONCES no consume llamadas LLM
+- DADO un caso ambiguo real CUANDO se procesa ENTONCES se enruta a `llm_path`
 
 **Componente**: `ai_first_system/src/router_ambiguedad.py`
 **Test**: `tests/ai_first/test_router.py`
 
 ---
 
-#### RF-04: Orquestacion de Agentes Especializados (LangGraph)
+#### RF-04: Batching Paralelo por Rondas para Ambiguos
 
-**Objetivo SMART**: implementar grafo de agentes que procese registros ambiguos con
-salida estructurada y trazabilidad por paso.
+**Objetivo SMART**: procesar ambiguos en lotes paralelos por rondas con timeout/retry acotado,
+con trazabilidad por registro y fallback tecnico explicito.
 
 **Descripcion**:
-Agentes minimos:
-- Agente de ingesta contextual
-- Agente de normalizacion semantica
-- Agente de validacion semantica
-- Agente de calidad explicativa
+El motor de ambiguos debe:
+- construir payload minimo por registro (id + campos necesarios + reglas)
+- empaquetar por `batch_size` y limite de tokens estimados
+- ejecutar lotes en paralelo (`max_workers`)
+- iterar por rondas (resolver -> conservar utiles -> reprocesar pendientes)
+- aplicar fallback tecnico al agotar rondas
 
 **Historia de Usuario**:
 ```
@@ -225,7 +230,7 @@ PARA escalar capacidades sin reescribir todo el flujo
 - DADO un caso ambiguo CUANDO corre el grafo ENTONCES se registra el camino de nodos ejecutados
 - DADO error en un nodo CUANDO ocurre ENTONCES aplica fallback sin romper corrida completa
 
-**Componente**: `ai_first_system/src/graph/`
+**Componente**: `ai_first_system/src/agents/agente_normalizador.py`
 **Test**: `tests/ai_first/test_graph.py`
 
 ---
@@ -352,7 +357,8 @@ PARA simplificar ejecucion y demo tecnica
 #### RNF-02: Rendimiento y Costo Operativo
 
 - Legacy: procesar 10k registros en tiempo acotado local
-- AI-first: controlar latencia y costo con enrutamiento hibrido y cache
+- AI-first: SLA objetivo de 1000 registros en 10-20 segundos (o menos)
+- AI-first: controlar latencia y costo con preclasificacion deterministica + lotes paralelos
 - Reportar siempre tiempo, throughput y costo estimado por corrida
 
 #### RNF-03: Mantenibilidad
@@ -386,10 +392,11 @@ ORQUESTADOR ROOT (main.py)
   |
   +--> [Modo 2] AI-FIRST HIBRIDO
   |      +--> ingesta base
-  |      +--> detector_ambiguedad
-  |      +--> if deterministico: reglas puras
-  |      +--> if ambiguo: grafo LangGraph (agentes)
-  |      +--> guardrails + retry + fallback
+  |      +--> preclasificacion deterministica (3 estados)
+  |      +--> rule_path: VALIDO_DIRECTO + INVALIDO_DIRECTO
+  |      +--> llm_path: AMBIGUO_REQUIERE_IA
+  |      +--> lotes paralelos por rondas (timeout/retry/backoff)
+  |      +--> guardrails + fallback tecnico
   |      +--> validacion final -> calidad -> export
   |      +--> logs workflow ai_first + telemetria LLM
   |
@@ -459,6 +466,19 @@ challenge/
 | Error LLM no recuperable | timeout repetido | ERROR + fallback + continuar lote |
 
 **Propagacion**: errores criticos abortan; errores por registro no abortan corrida completa.
+
+### 5.5 Parametros Tunables de Performance
+
+| Parametro | Variable `.env.local` | Default |
+|-----------|-------------------------|---------|
+| Timeout llamada LLM | `AI_FIRST_TIMEOUT_LLM_SEGUNDOS` | `30` |
+| Tamano de batch | `AI_FIRST_BATCH_SIZE` | `25` |
+| Tokens max estimados por batch | `AI_FIRST_BATCH_MAX_TOKENS` | `12000` |
+| Concurrencia de batches | `AI_FIRST_BATCH_MAX_WORKERS` | `4` |
+| Timeout de ronda batch | `AI_FIRST_BATCH_TIMEOUT_SEGUNDOS` | `45` |
+| Rondas maximas | `AI_FIRST_BATCH_MAX_RONDAS` | `3` |
+| Reintentos por batch | `AI_FIRST_BATCH_RETRIES` | `1` |
+| Backoff entre rondas | `AI_FIRST_BATCH_BACKOFF_SEGUNDOS` | `0.6` |
 
 ---
 
@@ -567,10 +587,22 @@ SOL-AMB-01,15/03/2025,CUENTA,CLI-101,50000,ARS,Argentina,N,S,BAJO,VALIDO,,llm_pa
             "rule_path": 8300,
             "llm_path": 1700,
             "porcentaje_llm": 17.0,
+            "validos_directos": 7900,
+            "invalidos_directos": 400,
+            "ambiguous_detected": 1700,
+            "ambiguous_sent_llm": 1700,
+            "batches_total": 90,
+            "batch_size_promedio": 18.9,
+            "rounds_total": 2,
             "total_fallbacks": 37,
             "total_retries_llm": 210,
-            "sinonimos_resueltos": 420,
-            "embeddings_resueltos": 85
+            "sinonimos_resueltos": 420
+        },
+        "performance": {
+            "tiempo_total": 18.4,
+            "tiempo_preclasificacion": 0.11,
+            "tiempo_llm": 17.9,
+            "tiempo_postproceso": 0.39
         },
         "llm_provider": {
             "provider": "gemini",

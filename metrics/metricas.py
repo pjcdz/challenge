@@ -39,11 +39,23 @@ def calcular_metricas_modo(resultado_modo, ground_truth=None):
         duracion = resumen.get("duracion_segundos", 0.0)
         total = resumen.get("total_procesados", 0)
     metricas["tiempo_total_segundos"] = duracion
+    metricas["tiempo_total"] = duracion
+    metricas["tiempo_preclasificacion"] = 0.0
+    metricas["tiempo_llm"] = 0.0
+    metricas["tiempo_postproceso"] = 0.0
     metricas["total_procesados"] = total
     if duracion > 0:
         metricas["throughput_registros_seg"] = round(total / duracion, 2)
     else:
         metricas["throughput_registros_seg"] = 0.0
+
+    if "resumen" in resultado_modo.keys():
+        resumen = resultado_modo["resumen"]
+        metricas["tiempo_preclasificacion"] = resumen.get(
+            "tiempo_preclasificacion", 0.0
+        )
+        metricas["tiempo_llm"] = resumen.get("tiempo_llm", 0.0)
+        metricas["tiempo_postproceso"] = resumen.get("tiempo_postproceso", 0.0)
 
     # Validos e invalidos
     metricas["total_validos"] = 0
@@ -62,6 +74,11 @@ def calcular_metricas_modo(resultado_modo, ground_truth=None):
     metricas["total_fallbacks"] = 0
     metricas["sinonimos_resueltos"] = 0
     metricas["embeddings_resueltos"] = 0
+    metricas["ambiguous_detected"] = 0
+    metricas["ambiguous_sent_llm"] = 0
+    metricas["batches_total"] = 0
+    metricas["batch_size_promedio"] = 0.0
+    metricas["rounds_total"] = 0
 
     if "enrutamiento" in resultado_modo.keys():
         enr = resultado_modo["enrutamiento"]
@@ -70,6 +87,19 @@ def calcular_metricas_modo(resultado_modo, ground_truth=None):
         metricas["total_rule_path"] = enr.get("regla_path", 0)
         metricas["sinonimos_resueltos"] = enr.get("sinonimos_resueltos", 0)
         metricas["embeddings_resueltos"] = enr.get("embeddings_resueltos", 0)
+        metricas["ambiguous_detected"] = enr.get("ambiguous_detected", 0)
+        metricas["ambiguous_sent_llm"] = enr.get("ambiguous_sent_llm", 0)
+        metricas["batches_total"] = enr.get("batches_total", 0)
+        metricas["batch_size_promedio"] = enr.get("batch_size_promedio", 0.0)
+        metricas["rounds_total"] = enr.get("rounds_total", 0)
+        if metricas["tiempo_preclasificacion"] == 0.0:
+            metricas["tiempo_preclasificacion"] = enr.get(
+                "tiempo_preclasificacion", 0.0
+            )
+        if metricas["tiempo_llm"] == 0.0:
+            metricas["tiempo_llm"] = enr.get("tiempo_llm", 0.0)
+        if metricas["tiempo_postproceso"] == 0.0:
+            metricas["tiempo_postproceso"] = enr.get("tiempo_postproceso", 0.0)
 
     # Metricas del reporte de calidad (si esta disponible)
     if "reporte" in resultado_modo.keys():
@@ -80,6 +110,38 @@ def calcular_metricas_modo(resultado_modo, ground_truth=None):
                 enr_ai = ai_info["enrutamiento"]
                 metricas["total_retries"] = enr_ai.get("total_retries_llm", 0)
                 metricas["total_fallbacks"] = enr_ai.get("total_fallbacks", 0)
+                if metricas["ambiguous_detected"] == 0:
+                    metricas["ambiguous_detected"] = enr_ai.get(
+                        "ambiguous_detected", 0
+                    )
+                if metricas["ambiguous_sent_llm"] == 0:
+                    metricas["ambiguous_sent_llm"] = enr_ai.get(
+                        "ambiguous_sent_llm", 0
+                    )
+                if metricas["batches_total"] == 0:
+                    metricas["batches_total"] = enr_ai.get("batches_total", 0)
+                if metricas["batch_size_promedio"] == 0.0:
+                    metricas["batch_size_promedio"] = enr_ai.get(
+                        "batch_size_promedio", 0.0
+                    )
+                if metricas["rounds_total"] == 0:
+                    metricas["rounds_total"] = enr_ai.get("rounds_total", 0)
+
+            if "performance" in ai_info.keys():
+                perf = ai_info["performance"]
+                if metricas["tiempo_total_segundos"] == 0.0:
+                    metricas["tiempo_total_segundos"] = perf.get("tiempo_total", 0.0)
+                    metricas["tiempo_total"] = metricas["tiempo_total_segundos"]
+                if metricas["tiempo_preclasificacion"] == 0.0:
+                    metricas["tiempo_preclasificacion"] = perf.get(
+                        "tiempo_preclasificacion", 0.0
+                    )
+                if metricas["tiempo_llm"] == 0.0:
+                    metricas["tiempo_llm"] = perf.get("tiempo_llm", 0.0)
+                if metricas["tiempo_postproceso"] == 0.0:
+                    metricas["tiempo_postproceso"] = perf.get(
+                        "tiempo_postproceso", 0.0
+                    )
 
     # Metricas LLM (costo estimado, embedding)
     metricas["llm_calls_totales"] = 0
@@ -190,6 +252,11 @@ def calcular_metricas_modo(resultado_modo, ground_truth=None):
             metricas["embedding_latencia_promedio_ms"] = round(
                 mlm["latencia_promedio_embedding"] * 1000.0, 3
             )
+
+    if metricas["llm_calls_totales"] == 0 and "enrutamiento" in resultado_modo.keys():
+        metricas["llm_calls_totales"] = resultado_modo["enrutamiento"].get(
+            "llm_calls_totales", 0
+        )
 
     # Precision en subset ambiguo (si hay ground truth)
     metricas["precision_ambiguos"] = None
@@ -335,12 +402,20 @@ def comparar_modos(metricas_legacy, metricas_ai_first):
     # LLM stats (solo ai_first)
     comparacion["llm"] = {
         "porcentaje_registros_llm": metricas_ai_first.get("porcentaje_llm", 0.0),
+        "ambiguous_detected": metricas_ai_first.get("ambiguous_detected", 0),
+        "ambiguous_sent_llm": metricas_ai_first.get("ambiguous_sent_llm", 0),
         "total_llm_calls": metricas_ai_first.get("llm_calls_totales", 0),
+        "batches_total": metricas_ai_first.get("batches_total", 0),
+        "batch_size_promedio": metricas_ai_first.get("batch_size_promedio", 0.0),
+        "rounds_total": metricas_ai_first.get("rounds_total", 0),
         "tokens_estado": metricas_ai_first.get("llm_tokens_estado", "sin_llamadas"),
         "costo_estimado_usd": metricas_ai_first.get("llm_costo_estimado_usd", 0.0),
         "costo_estado": metricas_ai_first.get("llm_costo_estado", "sin_llamadas"),
         "retries": metricas_ai_first.get("total_retries", 0),
         "fallbacks": metricas_ai_first.get("total_fallbacks", 0),
+        "tiempo_preclasificacion": metricas_ai_first.get("tiempo_preclasificacion", 0.0),
+        "tiempo_llm": metricas_ai_first.get("tiempo_llm", 0.0),
+        "tiempo_postproceso": metricas_ai_first.get("tiempo_postproceso", 0.0),
     }
 
     # Precision en ambiguos (si aplica)
@@ -435,6 +510,16 @@ def generar_resumen_markdown(metricas_legacy, metricas_ai_first, comparacion):
         + " |"
     )
     lineas.append(
+        "| Ambiguos detectados | "
+        + str(metricas_ai_first.get("ambiguous_detected", 0))
+        + " |"
+    )
+    lineas.append(
+        "| Ambiguos enviados LLM | "
+        + str(metricas_ai_first.get("ambiguous_sent_llm", 0))
+        + " |"
+    )
+    lineas.append(
         "| Sinonimos resueltos (sin LLM) | "
         + str(metricas_ai_first.get("sinonimos_resueltos", 0))
         + " |"
@@ -448,6 +533,17 @@ def generar_resumen_markdown(metricas_legacy, metricas_ai_first, comparacion):
         "| Llamadas LLM totales | "
         + str(metricas_ai_first.get("llm_calls_totales", 0))
         + " |"
+    )
+    lineas.append(
+        "| Batches totales | " + str(metricas_ai_first.get("batches_total", 0)) + " |"
+    )
+    lineas.append(
+        "| Batch size promedio | "
+        + str(metricas_ai_first.get("batch_size_promedio", 0.0))
+        + " |"
+    )
+    lineas.append(
+        "| Rondas totales | " + str(metricas_ai_first.get("rounds_total", 0)) + " |"
     )
     lineas.append(
         "| Llamadas con tokens | "
@@ -498,6 +594,19 @@ def generar_resumen_markdown(metricas_legacy, metricas_ai_first, comparacion):
     lineas.append(
         "| Embedding latencia promedio (ms) | "
         + str(metricas_ai_first.get("embedding_latencia_promedio_ms", 0))
+        + " |"
+    )
+    lineas.append(
+        "| Tiempo preclasificacion (s) | "
+        + str(metricas_ai_first.get("tiempo_preclasificacion", 0.0))
+        + " |"
+    )
+    lineas.append(
+        "| Tiempo LLM (s) | " + str(metricas_ai_first.get("tiempo_llm", 0.0)) + " |"
+    )
+    lineas.append(
+        "| Tiempo postproceso (s) | "
+        + str(metricas_ai_first.get("tiempo_postproceso", 0.0))
         + " |"
     )
     lineas.append("")

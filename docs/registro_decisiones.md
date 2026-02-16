@@ -382,6 +382,35 @@ Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que arc
 
 ---
 
+## DEC-19: Refactor AI-First a Preclasificacion Deterministica + Batches Paralelos
+
+**Fecha**: Febrero 2026  
+**Estado**: Aprobada  
+**Contexto**: El flujo AI-First procesaba 1000 registros en ~467s por exceso de llamadas LLM y
+tratamiento individual de ambiguos.
+
+**Decision**:
+- Implementar preclasificacion deterministica en 3 estados:
+  - `VALIDO_DIRECTO`
+  - `INVALIDO_DIRECTO`
+  - `AMBIGUO_REQUIERE_IA`
+- Enviar a LLM solo ambiguos reales.
+- Procesar ambiguos en lotes paralelos por rondas, con timeout/retry/backoff configurables.
+- Registrar trazabilidad por registro (motivo, regla, ronda/batch, estado LLM).
+- Publicar metricas completas de etapas y lotes.
+
+**Justificacion**:
+- Reduce latencia total al eliminar llamadas innecesarias.
+- Mantiene gobernanza de calidad con guardrails y fallback tecnico explicito.
+- Conserva paridad funcional con validaciones legacy en casos deterministas.
+- Habilita tuning operacional via `.env.local` sin tocar codigo.
+
+**Impacto observado**:
+- Benchmark 1000 registros: AI-First paso de ~467s a 0.26s en `benchmark_20260215_013307`.
+- `ambiguous_sent_llm` bajo en dataset sintetico por mayor cobertura deterministica.
+
+---
+
 ## Resumen de Decisiones
 
 | ID | Titulo | Prioridad | Modulos afectados |
@@ -404,3 +433,4 @@ Con el soporte multi-formato (DEC-10), el operador necesita poder elegir que arc
 | DEC-16 | Metricas LLM sin subreporte silencioso | Alta | ai_first_system/src/adapters/llm_provider.py, metrics/metricas.py |
 | DEC-17 | Compatibilidad usage SDK nuevo/legacy | Media | ai_first_system/src/adapters/gemini_adapter.py |
 | DEC-18 | Higiene estructural y artefactos efimeros | Media | .gitignore, data/, metrics/reports/, tests/ejecuciones/ |
+| DEC-19 | Refactor AI-First deterministico + batches | Alta | ai_first_system/src/router_ambiguedad.py, ai_first_system/src/agents/agente_normalizador.py, metrics/metricas.py, docs/ |

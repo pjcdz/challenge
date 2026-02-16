@@ -21,8 +21,10 @@ main.py (root)
     |      ingesta -> normalizacion -> validacion -> calidad -> export
     |
     +--> Modo AI-First
-    |      ingesta -> router -> regla_path o llm_path
-    |      llm_path -> grafo/guardrails/retry/fallback -> validacion -> calidad
+    |      ingesta -> preclasificacion deterministica
+    |      -> VALIDO_DIRECTO/INVALIDO_DIRECTO (rule_path)
+    |      -> AMBIGUO_REQUIERE_IA (llm_path batch paralelo por rondas)
+    |      -> validacion -> calidad
     |
     `--> Modo Comparar
            ejecuta ambos modos y genera benchmark JSON/MD
@@ -34,8 +36,8 @@ main.py (root)
 |------------|-----------------|---------------|
 | `main.py` | Menu unificado + CLI (`legacy`, `ai_first`, `comparar`, `generar`) | RF-08 |
 | `legacy_system/src/` | Baseline deterministico de negocio (R1/R2/R3) | RF-02 |
-| `ai_first_system/src/router_ambiguedad.py` | Clasificacion `rule_path` vs `llm_path` | RF-03 |
-| `ai_first_system/src/graph/workflow_graph.py` | Orquestacion de procesamiento ambiguo con fallback manual si falta LangGraph | RF-04 |
+| `ai_first_system/src/router_ambiguedad.py` | Preclasificacion `VALIDO_DIRECTO`/`INVALIDO_DIRECTO`/`AMBIGUO_REQUIERE_IA` | RF-03 |
+| `ai_first_system/src/agents/agente_normalizador.py` | Batching paralelo por rondas para ambiguos reales | RF-04 |
 | `ai_first_system/src/guardrails/` | Schema estricto + verificacion de salida LLM | RF-05 |
 | `ai_first_system/src/adapters/gemini_adapter.py` | Integracion Gemini real (SDK nuevo + legacy) | RF-05 |
 | `metrics/benchmark_runner.py` + `metrics/metricas.py` | Comparador legacy vs AI-First y reportes | RF-06 |
@@ -47,6 +49,18 @@ main.py (root)
 - No se permiten mocks/stubs/fakes en runtime ni en tests de contrato/integracion.
 - Configuracion obligatoria en `.env.local`: `GEMINI_API_KEY`, `GEMINI_GEMMA_MODEL`, `GEMINI_EMBEDDING_MODEL`.
 - Si falta configuracion, AI-First falla con error claro (sin fallback mock).
+
+### Criterios de Ambiguo (AI-First)
+
+- Fecha en lenguaje natural no deterministica (ej: `15 marzo 2025`)
+- Campo parcialmente interpretable fuera de regex estricto
+- Valor que requiere inferencia contextual real
+
+No ambiguos:
+
+- Fechas no canonicas pero resolubles por regla (`15 de marzo del 2025`, `Mar 15, 2025`, `2025/03/15`, `15.03.2025`)
+- Fechas incompletas (`marzo 2025`, `Q1 2025`, `primer trimestre`) se invalidan directo por R2
+- Monedas no soportadas directas (`GBP`, `MONEDA LOCAL`, `DIVISA EXTRANJERA`) se invalidan directo por R2
 
 ### Salidas por corrida
 
@@ -63,9 +77,21 @@ main.py (root)
 - Logging transversal via `legacy_system/src/logger.py` en ambos modos.
 - En AI-First cada registro queda trazado con `origen_procesamiento` (`rule_path` o `llm_path`).
 - Se registran `retries_llm` y `fallback_aplicado` por registro cuando aplica.
+- Se registra `_traza_ai` por registro con:
+  - clasificacion y motivo
+  - regla afectada
+  - ronda y batch que resolvio (si paso por IA)
 - El reporte AI-First incorpora:
   - metricas de enrutamiento (`rule_path`, `llm_path`, `% llm`, `fallbacks`, `retries`)
+  - metricas de lotes (`batches_total`, `batch_size_promedio`, `rounds_total`)
+  - tiempos por etapa (`tiempo_preclasificacion`, `tiempo_llm`, `tiempo_postproceso`)
   - metricas del provider (`total_llamadas`, tokens, costo estimado, estados de disponibilidad)
+
+### SLA y evidencia
+
+- SLA objetivo AI-First para 1000 registros: `10-20s` (o menos).
+- Benchmark ejecutado: `metrics/reports/benchmark_20260215_013307.json`.
+- Resultado AI-First: `0.26s` sobre `1000` registros.
 
 ---
 

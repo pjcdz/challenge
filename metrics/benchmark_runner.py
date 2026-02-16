@@ -280,8 +280,32 @@ def ejecutar_benchmark(archivo_entrada, ruta_ground_truth=None, provider="gemini
     )
     pct_llm = metricas_ai_first.get("porcentaje_llm", 0)
     print("% registros LLM: " + str(pct_llm) + "%")
-    costo = metricas_ai_first.get("llm_costo_estimado_usd", 0)
-    print("Costo LLM estimado: $" + str(costo))
+    print(
+        "Ambiguos detectados/enviados: "
+        + str(metricas_ai_first.get("ambiguous_detected", 0))
+        + "/"
+        + str(metricas_ai_first.get("ambiguous_sent_llm", 0))
+    )
+    print(
+        "Batches/rondas: "
+        + str(metricas_ai_first.get("batches_total", 0))
+        + "/"
+        + str(metricas_ai_first.get("rounds_total", 0))
+    )
+    print(
+        "Tiempo AI-First detalle (pre/llm/post): "
+        + str(metricas_ai_first.get("tiempo_preclasificacion", 0.0))
+        + "s / "
+        + str(metricas_ai_first.get("tiempo_llm", 0.0))
+        + "s / "
+        + str(metricas_ai_first.get("tiempo_postproceso", 0.0))
+        + "s"
+    )
+    costo = metricas_ai_first.get("llm_costo_estimado_usd", None)
+    if costo == None:
+        print("Costo LLM estimado: NO_DISPONIBLE")
+    else:
+        print("Costo LLM estimado: $" + str(costo))
     print("")
 
     resultado = {
