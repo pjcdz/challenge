@@ -176,7 +176,40 @@ python main.py --help
 
 Para usar el perfil realista del generador (`base` / `realista`), ejecutar `metrics/data_generator.py` de forma directa con `--perfil`.
 
-### 3. Salidas de Ejecucion
+### 3. Demo Entrevista (1 Comando)
+
+Comando recomendado para la entrevista final:
+
+```bash
+cd challenge
+python metrics/demo_ai_first.py
+```
+
+Este comando ejecuta todo automaticamente:
+
+1. Limpia benchmarks previos en `metrics/reports/` y ejecuciones previas en `data/ejecuciones/`.
+2. Corre benchmarks comparativos Legacy vs AI-First sobre datasets realistas de demo.
+3. Genera reportes benchmark por corrida (`benchmark_YYYYMMDD_HHMMSS.json/.md`).
+4. Genera un resumen ejecutivo final en:
+   - `metrics/reports/demo_ai_first_YYYYMMDD_HHMMSS.md`
+   - `metrics/reports/demo_ai_first_YYYYMMDD_HHMMSS.json`
+
+Opciones utiles:
+
+```bash
+# Mantener artefactos anteriores
+python metrics/demo_ai_first.py --sin-limpieza
+
+# Incluir escenario con incidente operativo (fallbacks/retries altos)
+python metrics/demo_ai_first.py --incluir-incidente
+```
+
+Resultado que podes contar en entrevista:
+- Legacy como baseline rapido y deterministico.
+- AI-First agregando valor en casos ambiguos con trazabilidad (`llm_path`, retries, fallbacks).
+- KPI principal: mejora en subset ambiguo, no velocidad total.
+
+### 4. Salidas de Ejecucion
 
 **Legacy Mode:**
 Cada ejecucion crea una carpeta en `data/ejecuciones/`:
@@ -203,7 +236,7 @@ metrics/reports/benchmark_YYYYMMDD_HHMMSS.json
 metrics/reports/benchmark_YYYYMMDD_HHMMSS.md
 ```
 
-### 4. Correr los Tests
+### 5. Correr los Tests
 
 ```bash
 cd challenge
