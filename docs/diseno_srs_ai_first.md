@@ -637,3 +637,271 @@ SOL-AMB-01,15/03/2025,CUENTA,CLI-101,50000,ARS,Argentina,N,S,BAJO,VALIDO,,llm_pa
 
 Si el SDK no devuelve usage metadata, el benchmark publica tokens/costo como
 `NO_DISPONIBLE` (`null` en JSON) para evitar subreporte silencioso en `0`.
+
+---
+
+## 9. Explicacion Detallada del Sistema AI-First
+
+### 9.1 Diagrama de Arquitectura AI-First
+
+```
++-----------------------------------------------------------------------------+
+|                           ARCHIVO DE ENTRADA                                |
+|                    (solicitudes.csv / .json / .txt)                         |
++-----------------------------------------------------------------------------+
+                                      |
+                                      v
++-----------------------------------------------------------------------------+
+|                          run_ai_first.py                                    |
+|                          (ORQUESTADOR)                                      |
++-----------------------------------------------------------------------------+
+                                      |
+         +----------------------------+----------------------------+
+         |                            |                            |
+         v                            v                            v
++-----------------+        +-----------------+        +-----------------+
+| agente_ingesta  |        |agente_normaliz. |        | agente_calidad  |
+|    .py          |        |     .py         |        |     .py         |
++-----------------+        +-----------------+        +-----------------+
+                                    |
+                    +---------------+---------------+
+                    |               |               |
+                    v               v               v
+            +-------------+ +-------------+ +-------------+
+            |router_ambig.| | GeminiAdapter| |guardrails/  |
+            |    py       | |   .py       | |verificador  |
+            +-------------+ +-------------+ +-------------+
+                    |               |
+                    |               |
+                    v               v
+            +-----------------------------+
+            |      workflow_graph.py      |
+            |    (LangGraph / Manual)     |
+            +-----------------------------+
+```
+
+### 9.2 Flujo de Procesamiento Detallado
+
+```
+                    ARCHIVO DE ENTRADA
+                           |
+                           v
+    +----------------------------------------------------------+
+    | PASO 1: INGESTA (agente_ingesta.py)                     |
+    |   - Lee archivo CSV/JSON/TXT                             |
+    |   - Retorna lista de diccionarios                        |
+    +----------------------------------------------------------+
+                           |
+                           v
+    +----------------------------------------------------------+
+    | PASO 2: PRECLASIFICACION (router_ambiguedad.py)          |
+    |                                                          |
+    |   Cada registro se clasifica en:                         |
+    |                                                          |
+    |   +-----------------+  +-----------------+              |
+    |   | VALIDO_DIRECTO  |  | INVALIDO_DIRECTO|              |
+    |   | (datos canonicos)|  | (datos erroneos)|              |
+    |   |    NO USA IA    |  |    NO USA IA    |              |
+    |   +-----------------+  +-----------------+              |
+    |            |                    |                        |
+    |            |   +--------------------------------+       |
+    |            |   |  AMBIGUO_REQUIERE_IA           |       |
+    |            |   |  (fechas texto, monedas raras) |       |
+    |            |   |       USA IA (Gemini)          |       |
+    |            |   +--------------------------------+       |
+    |            |                    |                        |
+    +------------+--------------------+------------------------+
+                 |                    |
+                 v                    v
+    +----------------------------------------------------------+
+    | PASO 3: NORMALIZACION HIBRIDA                            |
+    |                                                          |
+    |  +----------------+    +----------------------------+   |
+    |  |  RULE PATH     |    |      LLM PATH              |   |
+    |  | (normalizador  |    |  (agente_normalizador +    |   |
+    |  |   legacy)      |    |   GeminiAdapter)           |   |
+    |  |                |    |                            |   |
+    |  | - Trimming     |    | - Batching paralelo        |   |
+    |  | - Fechas       |    | - Rondas con retry         |   |
+    |  | - Upper/Lower  |    | - Guardrails de schema     |   |
+    |  | - categoria    |    | - Fallback si falla        |   |
+    |  +----------------+    +----------------------------+   |
+    |           |                        |                     |
+    |           +------------+-----------+                     |
+    |                        v                                 |
+    |              registros normalizados                      |
+    +----------------------------------------------------------+
+                           |
+                           v
+    +----------------------------------------------------------+
+    | PASO 4: VALIDACION DURA (agente_validador.py)            |
+    |   - R1: Campos obligatorios                              |
+    |   - R2: Formato fecha/moneda                             |
+    |   - R3: Rango de monto                                   |
+    |   - Marca estado VALIDO/INVALIDO                         |
+    +----------------------------------------------------------+
+                           |
+                           v
+    +----------------------------------------------------------+
+    | PASO 5: CALIDAD (agente_calidad.py)                      |
+    |   - Reporte JSON con metricas                            |
+    |   - Incluye stats de IA: tokens, llamadas, costos        |
+    +----------------------------------------------------------+
+                           |
+                           v
+    +----------------------------------------------------------+
+    | PASO 6: EXPORTACION                                       |
+    |   - solicitudes_limpias.csv (con campo origen_procesam.) |
+    |   - reporte_calidad.json                                  |
+    |   - workflow.log                                          |
+    +----------------------------------------------------------+
+```
+
+### 9.3 Componentes Clave
+
+#### router_ambiguedad.py - Clasificador Deterministico
+
+**Funcion**: Clasifica cada registro SIN usar IA
+
+| Clasificacion | Criterio | Ejemplo |
+|---------------|----------|---------|
+| `VALIDO_DIRECTO` | Fecha canonica, moneda soportada, monto numerico | `15/03/2025`, `USD`, `50000` |
+| `INVALIDO_DIRECTO` | Fecha incompleta, moneda no soportada explicita | `Q1 2025`, `GBP`, `MONEDA LOCAL` |
+| `AMBIGUO_REQUIERE_IA` | Fecha en lenguaje natural, moneda interpretable | `15 marzo 2025`, `pesos` |
+
+**Resolucion deterministica** (sin IA):
+- `15 de marzo del 2025` -> `15/03/2025`
+- `Mar 15, 2025` -> `15/03/2025`
+- `pesos` -> `ARS`
+
+#### agente_normalizador.py - Normalizacion Hibrida
+
+**Funcion**: Normaliza usando reglas O IA segun la clasificacion
+
+**Batching paralelo**:
+```
+registros_ambiguos --> lotes de 25 --> ThreadPoolExecutor (4 workers)
+                              |
+                              v
+                    GeminiAdapter.generar()
+                              |
+                              v
+                    verificar_respuesta_llm()
+                              |
+                    +---------+---------+
+                    v                   v
+              RESUELTO            NO_RESUELTO
+                    |                   |
+                    v                   v
+              registro_norm        pendiente (siguiente ronda)
+```
+
+**Parametros configurables** (`.env.local`):
+- `AI_FIRST_BATCH_SIZE`: 25 registros por lote
+- `AI_FIRST_BATCH_MAX_WORKERS`: 4 threads paralelos
+- `AI_FIRST_BATCH_MAX_RONDAS`: 3 rondas de reintento
+
+#### GeminiAdapter - Cliente Gemini
+
+**Funcion**: Interfaz con Google Gemini API
+
+```python
+# Inicializacion
+adapter = GeminiAdapter()  # Usa GEMINI_API_KEY de .env.local
+
+# Generacion con retry
+resultado = adapter.generar_con_retry(prompt, "", "", max_intentos=2)
+
+# Metricas
+metricas = adapter.obtener_metricas()
+# {"total_llamadas": 5, "total_tokens": 1500, "total_costo_usd": 0.002}
+```
+
+#### workflow_graph.py - Grafo de Estados
+
+**Funcion**: Orquesta el flujo de cada registro ambiguo
+
+```
++---------------------+
+| preparar_contexto   |
++----------+----------+
+           |
+           v
++---------------------+     error + retries < max
+| normalizacion_llm   +-------------------------+
++----------+----------+                         |
+           |                                    |
+   +-------+-------+                            |
+   v               v                            |
+ok            error + retries >= max            |
+   |               |                            |
+   v               v                            |
++----------+  +----------+                      |
+|verificar |  | fallback |                      |
+| schema   |  +----------+                      |
++----+-----+                                    |
+     |                                          |
+ +---+---+                                      |
+ v       v                                      |
+ok    error ------------------------------------+
+ |
+ v
++--------------+
+|validacion_dura|
++------+-------+
+       |
+       v
++-------------------+
+|calidad_explicativa|
++-------------------+
+```
+
+#### guardrails/ - Validacion de Salida
+
+- `schema_salida.py`: Define schema esperado
+- `verificador_salida.py`: Valida respuesta del LLM
+
+```python
+# Verificacion
+reg_norm, error = verificar_respuesta_llm(texto_llm, reg_original)
+if error != None:
+    # Aplicar fallback seguro
+    reg_fallback = aplicar_fallback(reg_original, error)
+```
+
+### 9.4 Ejecucion del Sistema AI-First
+
+```bash
+# Configurar .env.local
+GEMINI_API_KEY=tu_api_key
+GEMINI_GEMMA_MODEL=gemini-2.0-flash
+GEMINI_EMBEDDING_MODEL=text-embedding-004
+
+# Ejecutar
+python -m ai_first_system.src.run_ai_first data/solicitudes.csv
+```
+
+**Salidas generadas**:
+```
+data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+|-- solicitudes_limpias.csv   # Con campo origen_procesamiento
+|-- reporte_calidad.json      # Incluye metricas_llm
+`-- workflow.log
+```
+
+**Campo `origen_procesamiento`**:
+- `rule_path`: Procesado por reglas deterministicas
+- `llm_path`: Procesado por IA (Gemini)
+
+---
+
+## 10. Comparacion Legacy vs AI-First
+
+| Aspecto | Legacy | AI-First |
+|---------|--------|----------|
+| **Normalizacion** | Solo reglas deterministicas | Reglas + IA para ambiguos |
+| **Fechas** | 3 formatos estrictos | Cualquier formato + lenguaje natural |
+| **Monedas** | Solo ARS/USD/EUR | Sinonimos + inferencia semantica |
+| **Trazabilidad** | estado + motivos | + origen_procesamiento + _traza_ai |
+| **Metricas** | Solo calidad | + tokens, costo, llamadas IA |
+| **Complejidad** | Baja | Media-Alta (batching, retries) |

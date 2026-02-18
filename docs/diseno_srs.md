@@ -534,6 +534,119 @@ SOL-002,16/03/2025,TARJETA,CLI-101,150000,USD,Brasil,N,S,MEDIO,VALIDO,
 }
 ```
 
+---
+
+## 9. Explicacion Detallada del Sistema Legacy
+
+### 9.1 Diagrama de Comunicacion entre Modulos
+
+```
++-----------------------------------------------------------------------------+
+|                              ARCHIVOS DE ENTRADA                            |
+|                    (solicitudes.csv / .json / .txt)                         |
++-----------------------------------------------------------------------------+
+                                      |
+                                      v
++-----------------------------------------------------------------------------+
+|                                  main.py                                    |
+|                            (ORQUESTADOR)                                    |
+|                                                                             |
+|  - Recibe ruta del archivo (CLI o menu interactivo)                         |
+|  - Crea carpeta de ejecucion                                                |
+|  - Inicializa logger                                                        |
+|  - Llama secuencialmente a cada modulo                                      |
+|  - Exporta CSV final                                                        |
++-----------------------------------------------------------------------------+
+         |                    |                    |                    |
+         | llama              | llama              | llama              | llama
+         v                    v                    v                    v
++-------------+      +-------------+      +-------------+      +-------------+
+|  ingesta.py |      |normalizador |      | validador.py|      | calidad.py  |
+|             |      |    .py      |      |             |      |             |
++-------------+      +-------------+      +-------------+      +-------------+
+         |                    |                    |                    |
+         | retorna            | retorna            | retorna            | retorna
+         | List[Dict]         | List[Dict]         | List[Dict]         | Dict
+         | (registros)        | (normalizados)     | (con estado)       | (reporte)
+         v                    v                    v                    v
+    +-------------------------------------------------------------------------+
+    |                         FLUJO DE DATOS                                  |
+    |                                                                         |
+    |  registros --> registros --> registros --> reporte_json                 |
+    |  crudos        normalizados   validados                                |
+    +-------------------------------------------------------------------------+
+
+
++-----------------------------------------------------------------------------+
+|                           logger.py (TRANSVERSAL)                           |
+|                                                                             |
+|   +---------+    +---------+    +---------+    +---------+    +---------+  |
+|   | main.py |    |ingesta.py|   |normaliz.|    |validador|    |calidad.py|  |
+|   +----+----+    +----+----+    +----+----+    +----+----+    +----+----+  |
+|        |              |              |              |              |        |
+|        +--------------+--------------+--------------+--------------+        |
+|                                    |                                        |
+|                                    v                                        |
+|                        workflow.log (archivo)                               |
++-----------------------------------------------------------------------------+
+```
+
+### 9.2 Detalle de Llamadas entre Funciones
+
+```
+main.py
+  |
+  +--> logger.inicializar(carpeta, "workflow.log")
+  |
+  +--> ingesta.leer_solicitudes(archivo)
+  |      +--> retorna: List[Dict] (registros crudos)
+  |
+  +--> normalizador.normalizar_registros(registros)
+  |      +--> retorna: List[Dict] (registros normalizados)
+  |
+  +--> validador.validar_registros(registros)
+  |      +--> retorna: List[Dict] (registros con estado VALIDO/INVALIDO)
+  |
+  +--> calidad.generar_reporte(registros, archivo, carpeta)
+  |      +--> retorna: Dict (reporte JSON)
+  |      +--> genera: reporte_calidad.json
+  |
+  +--> exportar_csv(registros, ruta_salida)
+         +--> genera: solicitudes_limpias.csv
+```
+
+### 9.3 Estructura de Datos que Circula
+
+Cada modulo recibe y retorna una **lista de diccionarios** que se enriquece en cada paso:
+
+```python
+# Despues de INGESTA (crudo)
+{"id_solicitud": "001", "fecha_solicitud": "2025-03-15", ...}
+
+# Despues de NORMALIZADOR (agrega categoria_riesgo)
+{"id_solicitud": "001", "fecha_solicitud": "15/03/2025", ..., "categoria_riesgo": "BAJO"}
+
+# Despues de VALIDADOR (agrega estado y motivos)
+{"id_solicitud": "001", ..., "estado": "VALIDO", "motivos_falla": "", "_detalle_reglas": {...}}
+```
+
+### 9.4 Ejecucion del Sistema
+
+```bash
+# Opcion A: Con argumento
+python src/main.py data/solicitudes.csv
+
+# Opcion B: Menu interactivo
+python src/main.py
+```
+
+**Salidas generadas**:
+```
+data/ejecuciones/ejecucion_YYYYMMDD_HHMMSS_<archivo>/
+|-- solicitudes_limpias.csv   <-- main.py (exportar_csv)
+|-- reporte_calidad.json      <-- calidad.py
+`-- workflow.log              <-- logger.py (todos los modulos)
+```
 
 
 
