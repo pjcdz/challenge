@@ -199,7 +199,6 @@ def menu_interactivo(dir_data):
 def main(archivo_entrada_param=None, archivo_salida_param=None, dir_data_param=None):
     # Orquestador principal del workflow
     # Acepta rutas opcionales para testing; si no se pasan, usa las por defecto
-    inicio = time.time()
 
     # Rutas
     if dir_data_param != None:
@@ -230,6 +229,9 @@ def main(archivo_entrada_param=None, archivo_salida_param=None, dir_data_param=N
                     "archivo_reporte": None,
                     "archivo_log": None,
                 }
+
+    # Iniciar medicion una vez definido el archivo de entrada
+    inicio = time.time()
 
     # Crear carpeta unica de ejecucion y centralizar todos los artefactos ahi
     carpeta_ejecucion = crear_carpeta_ejecucion(dir_data, archivo_entrada)
